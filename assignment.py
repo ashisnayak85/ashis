@@ -1,0 +1,26 @@
+x=10
+x+=10
+print(x)
+x-=10
+print(x)
+x-=10
+print(x)
+x*=10
+print(x)
+x=30
+x**=2
+print(x)
+x/=10
+print(x)
+x%=10
+print(x)
+x=40
+print(x)
+x^=2
+print(x)
+x>>=2
+print(x)
+x<<=2
+print(x)
+a=b=c=d=e=f=g=h=90 #using = operator 
+print(a,b,c,d,e,f,g,h)

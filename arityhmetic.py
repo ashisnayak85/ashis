@@ -1,0 +1,11 @@
+a=10
+b=5
+name='Ashis'
+print(a+b)
+print(a*b)
+print(a%b)
+print(a/b)
+print(a-b)
+print(a**b)
+print(a//b)
+print(name+'25')
