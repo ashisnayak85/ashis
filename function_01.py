@@ -132,3 +132,130 @@
 
 #Note:In c,java and other some language one function can return only 1 value but in python 1 function can return
 #multiple value....
+
+                                 #ARGUMENT
+#Argument can be classified into 4 types
+#1:positional argument
+#2:keyword argument
+#3:default argument
+#4variable length argument
+
+#1:positonal argument
+# def add(x,y):
+#    print(x+y)
+# add(-500,400)
+# add(400,-500)
+
+# def sub(x,y):
+#    print(x-y)
+# sub(-500,400)
+# sub(400,-500)
+
+# def fun(x,y):
+#    print(x)
+# fun(500)#Error:-missing anpositional argument
+
+#2:Keyword argument
+#ex:1
+# def fun(x,y):
+#    print(x+y)
+# fun(y=10,x=30)
+
+#ex:2
+# def display(a,wish):
+#    print('hii',a,wish)
+# display(a='hello',wish='good_morning')
+# display(wish='good_morning',a='hello')
+
+#ex:3 Is it valid
+# def wish(name,msg):
+#    print('hyy',name,msg)
+# wish('ashis',msg='good_morning')
+
+#ans:Yes it is valid
+
+#Is it valid?
+# def wish(name,msg):
+#    print('hyy',name,msg)
+# wish(msg='good_morning','ashis')#error:positional argument followes keyword argument
+#ans:No it is not valid
+
+#3:default argument:if we want we can add default value to our positional arguments
+
+#ex:1
+# def wish_me(name="unknown"):
+#    print("hello",name)
+# wish_me('Ashis')
+# wish_me()#Here if we will not pass any value then it will consider the default value
+
+#ex:2
+# def wish_me(msg,name="unknown"):
+#    print('hello',msg,name)
+# wish_me('ashis',msg='thanks')#error:-Here got multiple value for argument 'msg'
+
+#ex:3
+# def wish_me(msg,name='unknown'):
+#    print('hello',name,msg)
+# wish_me(msg='thanks','ashis')#positional argument follows key-word argument
+
+#note:-After default argument we can not use non-default argument
+
+#4:Variable length argument:-if we want to pass variable number of arguments to our function then that argument 
+#is called as variable length arguments
+#Herein variable length argument we will use *symbol
+#ex:1
+# def fun(*n):
+#    print(n)
+# fun()#()
+# fun(10)#(10,)
+# fun(10,20,30,40)#(10,20,30,40)
+
+#Q1:find out the sum of all number based on the argument
+# def fun(*n):
+#    total=0
+#    for i in n:
+#       total=total+i
+#    print(total)
+# fun()
+# fun(11,22)
+# fun(11,22,1)
+# fun(1,2,3,4)
+#note:-we can use variable length argument along with positional argument
+
+#ex:2
+# def fun1(s,*n):
+#    print(s)
+#    print(n)
+# fun1(10,20,30,40)
+
+#ex:3
+# def fun1(s,*n):
+#    print(s)
+#    print(n)
+#    for i in n:
+#       print(i)
+# fun1(1,2,3,'a','b','c')
+
+#ex:4
+# def fun1(*n,s):
+#    print(n)
+#    print(s)
+# fun1(10,20,30,s=101)
+
+#ex:5
+# def fun1(*n,s):
+#    print(n)
+#    print(s)
+# fun1(s=101,10,20,30)#error:positional argument followes key word argument
+
+#keyword variable length argument
+#1:Here we will use **
+#2:Here we will pass any number of keyword arguments,it will iternally stores argument in dict format
+
+#ex:1
+# def fun(**n):
+#    print(n)
+# fun(a=10,b=20,c=30)
+
+# Indentation is used to identify code blocks
+ 
