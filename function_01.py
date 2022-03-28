@@ -261,26 +261,26 @@
  
 #logical program of function
 #function to count average mark
-def find_average_mark(marks):
-   sum_of_marks=sum(marks)
-   total_subject=len(marks)
-   average_mark=sum_of_marks/total_subject
-   return average_mark
+# def find_average_mark(marks):
+#    sum_of_marks=sum(marks)
+#    total_subject=len(marks)
+#    average_mark=sum_of_marks/total_subject
+#    return average_mark
 
-#calculate the grade and return it
-def compute_grade(average_mark):
-   if average_mark>=80:
-      grade ='A'
-   elif average_mark>=60:
-      grade='B'
-   elif average_mark>=50:
-      grade='C'
-   else:
-      grade='F'
-   return grade
-marks=[50,60,30,70,80]
-average_mark=find_average_mark(marks)
-print("Your average mark is:",average_mark)
+# #calculate the grade and return it
+# def compute_grade(average_mark):
+#    if average_mark>=80:
+#       grade ='A'
+#    elif average_mark>=60:
+#       grade='B'
+#    elif average_mark>=50:
+#       grade='C'
+#    else:
+#       grade='F'
+#    return grade
+# marks=[50,60,30,70,80]
+# average_mark=find_average_mark(marks)
+# print("Your average mark is:",average_mark)
 
-grade=compute_grade(average_mark)
-print("your grade is:",grade)
+# grade=compute_grade(average_mark)
+# print("your grade is:",grade)
