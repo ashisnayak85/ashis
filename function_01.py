@@ -284,3 +284,38 @@
 
 # grade=compute_grade(average_mark)
 # print("your grade is:",grade)
+
+#WITHOUT USING LOOP FUNCTION WE WRITE PROGRAME USING RECURSION
+#1:factorial of a number
+# def fact(num):
+#    if num==0:
+#       return 1
+#    else:
+#       result=num*fact(num-1)
+#    return result
+# print(fact(5))
+
+#2:fibonacii number
+# def fib(num):
+#    result=0
+#    if(num<=1):
+#       return num
+#    return(fib(num-1)+fib(num-2))
+# print(fib(6))
+
+#3:print 1 to 10
+# def fun(num):
+#    print(num)
+
+#    if(num==10):
+#       return
+#    fun(num+1)
+# fun(1)
+
+#4:print 10 to 1 using recursion
+# def fun(n):
+#    print(n)
+#    if n==1:
+#       return
+#    fun(n-1)
+# fun(5)
