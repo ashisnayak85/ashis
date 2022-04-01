@@ -297,7 +297,6 @@
 
 #2:fibonacii number
 # def fib(num):
-#    result=0
 #    if(num<=1):
 #       return num
 #    return(fib(num-1)+fib(num-2))
