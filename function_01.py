@@ -297,11 +297,13 @@
 
 #2:fibonacii number
 # def fib(num):
-#    if(num<=1):
+#    result=0
+#    if num<=1:
 #       return num
-#    return(fib(num-1)+fib(num-2))
-# print(fib(6))
-
+#    else:
+#       return (fib(num-1)+fib(num-2))
+# a=int(input("Enter the number: "))
+# print(fib(a))
 #3:print 1 to 10
 # def fun(num):
 #    print(num)
