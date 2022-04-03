@@ -7,5 +7,3 @@
 
 # num=int(input("Enter the rows: "))
 # pattern(num)
-
-
