@@ -36,13 +36,27 @@
 
 #It does not have to be named self , you can call it whatever you like, but it has to be
 #  the first parameter of any function in the class:
-class person:
-    def __init__(first,name,age):
-        first.name=name
-        first.age=age
+# class person:
+#     def __init__(first,name,age):
+#         first.name=name
+#         first.age=age
 
-    def myfun(abc):
-        print("Hello my name is:"+abc.name)
-        
-p1=person("john",36)
-p1.myfun()
+#     def myfun(abc):
+#         print("Hello my name is:"+abc.name)
+
+# p1=person("john",36)
+# p1.myfun()
+
+#modify the object properties
+
+# class person:
+#     def __init__(self,name,age):
+#         self.name=name
+#         self.age=age
+
+#     def myfun(self):
+#         print("Hello my name is "+self.name)
+
+# p1=person("john",34)
+# p1.age=40
+# print(p1.age)
