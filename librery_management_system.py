@@ -1,3 +1,6 @@
+import mysql.connector as a
+con=a.connect(host="localhost",user="root",passwd="asHis@9583",database="libreary")
+
 def add_book():
     bn=input("Enter the book name: ")
     c=input("Enter the book code: ")
@@ -20,30 +23,45 @@ def submit_book():
     r=input("Enter the reg no: ")
     co=input("enter the book code")
     d=input("Enter date: ")
+    a="insert into submit values(%s,%s,%s,%s)"
     data=(n,r,co,d)
+    c=con.cursor()
+    c.execute(a,data)
+    con.commit()
     print(">--------------------------------------------------------------------------<")
     print("Book sumitted from:",n)
+    bookup(co,1)
 def bookup(co,u):
-
-
-
-
-
-
+    a="select TOTAL from books where BCODE=%s"
+    data=(co,)
+    c=con.cursor()
+    c.execute(a,data)
+    myresult=c.fetchone()
+    t=myresult[0]+u
+    sql="update books set TOTAL=%s where BCODE=%s"
+    d=(t,co)
+    c.execute(sql,d)
+    con.commit()
     main()
+
 def dbook():
     ac=input("Enter the book code: ")
-    
-
-
-
-
+    a="delete books where BCODE=%s"
+    data=(ac,)
+    c=con.cursor()
+    c.execute(a,data)
+    con.commit()
     main()
 def display_book():
-
-
-
-
+    a="select * from books"
+    c=con.cursor()
+    c.execute(a)
+    myresult=c.fetchall()
+    for i in myresult:
+        print("Book Name:",i[0])
+        print("Book Code:",i[1])
+        print("Total:",i[2])
+        print(">-----------------------------------------<")
     main()
 def main():
     print("""
