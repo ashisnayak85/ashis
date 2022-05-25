@@ -61,6 +61,7 @@ def display_book():
         print("Book Name:",i[0])
         print("Book Code:",i[1])
         print("Total:",i[2])
+        print("subject:",i[3])
         print(">-----------------------------------------<")
     main()
 def main():
