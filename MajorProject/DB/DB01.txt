@@ -1,0 +1,19 @@
+Tables:
+Admin LogIn Table
+attribute:UserName,password;
+Create table AdminLogIn(username varchar2(20),password varchar(20),primary key(username));
+
+Student Registration Table:
+attribute:registration number,name,branch,AdmissionYear,passoutYear,TotalDue,remaining Due,emailId,Phone number
+
+create table StudentRegistration(regNo varchar2(20),name varchar2(20),branch varchar2(20),admissionYear number,passoutYear number,totalDue number,remainDue number,emailId varchar(25),phNumber number,primary key(regNo));
+
+<%
+AdminBean ab=(AdminBean)application.getAttribute("abean");
+out.println("Welcome User: "+ab.getuName()+"<br>");
+%>
+<a href="logout">LogOut</a>
+1901297978
+
+
+9583769500

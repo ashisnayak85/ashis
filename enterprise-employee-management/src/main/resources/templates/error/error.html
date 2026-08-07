@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Error - EEMS')}"></head>
+<body>
+<nav th:replace="~{layout/fragments :: navbar}"></nav>
+<div class="container mt-5 text-center">
+    <h1 class="text-danger">Error</h1>
+    <p th:text="${message}">An error occurred</p>
+    <a th:href="@{/dashboard}" class="btn btn-primary">Go to Dashboard</a>
+</div>
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+</body>
+</html>

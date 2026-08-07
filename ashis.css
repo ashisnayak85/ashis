@@ -94,6 +94,7 @@ code, pre{
     position: relative;
     top: 60px;
     height: 350px;
+    /* height: 800px; */
     width: 400px;
     padding: 40px;
     z-index: index 100;
@@ -106,7 +107,10 @@ code, pre{
     margin: 30px 0;
 }
 .showcase-form input[type='text'],
-.showcase-form input[type='email']
+.showcase-form input[type='email'],
+.showcase-form input[type='password'],
+.showcase-form input[type='date'],
+.showcase-form input[type='number']
 {
     border: 0;
     border-bottom: 1px solid #b4becb;
@@ -294,12 +298,12 @@ code, pre{
             grid-row:1;
         }
 }
-.features-head,
+/* .features-head,
 .features-sub-head,
 .docs-head
 {
     text-align: center;
-}
+} */
 .features-head,
 .features-sub-head,
 .docs-head img
