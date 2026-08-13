@@ -62,6 +62,17 @@ function renderTable(employees) {
     }
 
     employees.forEach(emp => {
+		let employeeType = '';
+		let employeeClass = '';
+		if (emp.active === true) {
+		        employeeType = "Active Employee";
+				employeeClass = "active-employee";
+		    }
+			else{
+				employeeType = "Resigned Employee";
+				employeeClass = "resigned-employee";
+			}
+
         tbody.append(`
             <tr>
                 <td>${emp.employeeCode}</td>
@@ -70,14 +81,9 @@ function renderTable(employees) {
                 <td>${emp.mobile || '-'}</td>
                 <td>${emp.departmentName || '-'}</td>
                 <td>${emp.designation || '-'}</td>
-                <!--<td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editEmployee(${emp.id})">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${emp.id})">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>-->
+                <td class="${employeeClass}">
+                   ${employeeType}
+                </td>
             </tr>
         `);
     });

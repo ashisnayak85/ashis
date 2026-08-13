@@ -129,6 +129,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         return toPageResponse(page);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeDTO> getAllEmployees(Pageable pageable) {
+        // findAll(pageable) is inherited from JpaRepository -> "SELECT e FROM Employee e" (no active filter)
+        Page<Employee> page = employeeRepository.findAll(pageable);
+        return toPageResponse(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeDTO> searchAllEmployees(String keyword, Pageable pageable) {
+        Page<Employee> page = employeeRepository.searchAllEmployees(keyword, pageable);
+        return toPageResponse(page);
+    }
+
     private PageResponse<EmployeeDTO> toPageResponse(Page<Employee> page) {
         return PageResponse.<EmployeeDTO>builder()
                 .content(page.getContent().stream().map(employeeMapper::toDTO).toList())

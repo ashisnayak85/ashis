@@ -28,8 +28,15 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
            "LOWER(e.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(e.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(e.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    //@Query("SELECT e from Employee e ")
     Page<Employee> searchEmployees(@Param("keyword") String keyword, Pageable pageable);
+
+    // SELECT * FROM Employee (no active filter) - used by the "All Employees" screen
+    @Query("SELECT e FROM Employee e WHERE " +
+           "(LOWER(e.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(e.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(e.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(e.employeeCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Employee> searchAllEmployees(@Param("keyword") String keyword, Pageable pageable);
 
     long countByDepartmentId(Long departmentId);
 }

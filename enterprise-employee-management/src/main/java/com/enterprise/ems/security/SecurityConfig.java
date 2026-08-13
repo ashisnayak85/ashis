@@ -12,6 +12,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+
+import java.util.List;
 
 /*
  * ================================================================================
@@ -39,6 +46,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // Allow the React dev server (and later, wherever the built SPA is hosted) to call this API.
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // React can't read a Thymeleaf <meta> tag, so hand the CSRF token out as a
+            // readable cookie (XSRF-TOKEN) instead. The frontend echoes it back as the
+            // X-XSRF-TOKEN header on POST/PUT/DELETE - standard Spring Security SPA pattern.
+            //.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .csrf(csrf -> csrf
+            	    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            	    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            	)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 .requestMatchers("/login", "/error").permitAll()
@@ -49,13 +66,24 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
+                .loginProcessingUrl("/login")
+                // Old behaviour redirected to an HTML page. React needs JSON back so it
+                // can decide what to render - these handlers replace the redirects.
+                .successHandler((request, response, authentication) -> {
+                    response.setStatus(200);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"success\":true,\"username\":\"" + authentication.getName() + "\"}");
+                })
+                .failureHandler((request, response, exception) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"success\":false,\"message\":\"Invalid username or password\"}");
+                })
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessHandler((request, response, authentication) -> response.setStatus(200))
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
@@ -66,6 +94,23 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        // Vite's default dev port is 5173 (CRA would be 3000) - add/replace with your
+        // real deployed frontend origin(s) once the SPA is hosted somewhere.
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5174", "http://localhost:3000"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("X-XSRF-TOKEN"));
+        // Required so the session cookie (JSESSIONID) and CSRF cookie travel with requests.
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

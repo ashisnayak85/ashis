@@ -17,4 +17,9 @@ public interface EmployeeService {
     PageResponse<EmployeeDTO> getAll(Pageable pageable);
 
     PageResponse<EmployeeDTO> search(String keyword, Pageable pageable);
+
+    // Loads every row in the Employee table (active + inactive) - "SELECT * FROM Employee"
+    PageResponse<EmployeeDTO> getAllEmployees(Pageable pageable);
+
+    PageResponse<EmployeeDTO> searchAllEmployees(String keyword, Pageable pageable);
 }
