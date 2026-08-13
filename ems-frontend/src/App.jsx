@@ -1,0 +1,46 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import EmployeeList from './pages/EmployeeList';
+import AllEmployeeList from './pages/AllEmployeeList';
+import Departments from './pages/Departments';
+import Attendance from './pages/Attendance';
+import Leaves from './pages/Leaves';
+import Users from './pages/Users';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/employees" element={<EmployeeList />} />
+              <Route path="/all-employees" element={<AllEmployeeList />} />
+              <Route path="/departments" element={<Departments />} />
+              <Route path="/attendance" element={<Attendance />} />
+              <Route path="/leaves" element={<Leaves />} />
+              <Route path="/profile" element={<Profile />} />
+
+              <Route element={<ProtectedRoute role="ADMIN" />}>
+                <Route path="/admin/users" element={<Users />} />
+              </Route>
+            </Route>
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
