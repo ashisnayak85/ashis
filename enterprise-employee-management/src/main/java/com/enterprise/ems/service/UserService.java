@@ -10,4 +10,7 @@ public interface UserService {
     List<UserDTO> getAllUsers();
 
     void toggleUserStatus(Long id);
+
+    // Self-service password change - usable by both ADMIN and EMPLOYEE roles.
+    void changePassword(String username, String currentPassword, String newPassword);
 }

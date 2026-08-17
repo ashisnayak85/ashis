@@ -7,3 +7,7 @@ export function getUsers() {
 export function createUser(dto) {
   return api.post('/api/admin/users', dto);
 }
+
+export function getRoles() {
+  return api.get('/api/admin/users/roles');
+}

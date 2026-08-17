@@ -10,4 +10,6 @@ public interface FileStorageService {
     FileUpload storeFile(MultipartFile file, String entityType, Long entityId, String uploadedBy);
 
     List<FileUpload> getFiles(String entityType, Long entityId);
+
+    FileUpload getFile(Long id);
 }

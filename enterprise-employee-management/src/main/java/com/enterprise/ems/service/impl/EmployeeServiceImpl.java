@@ -5,11 +5,13 @@ import com.enterprise.ems.dto.EmployeeDTO;
 import com.enterprise.ems.dto.PageResponse;
 import com.enterprise.ems.entity.Department;
 import com.enterprise.ems.entity.Employee;
+import com.enterprise.ems.entity.Location;
 import com.enterprise.ems.exception.DuplicateResourceException;
 import com.enterprise.ems.exception.ResourceNotFoundException;
 import com.enterprise.ems.mapper.EmployeeMapper;
 import com.enterprise.ems.repository.DepartmentRepository;
 import com.enterprise.ems.repository.EmployeeRepository;
+import com.enterprise.ems.repository.LocationRepository;
 import com.enterprise.ems.service.AuditService;
 import com.enterprise.ems.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /*
  * ================================================================================
@@ -39,10 +43,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeDTO> getAvailableForUserCreation() {
+        return employeeRepository.findByActiveTrueAndUserIsNull().stream()
+                .map(employeeMapper::toDTO)
+                .toList();
+    }
+
     private static final Logger log = LoggerFactory.getLogger(EmployeeServiceImpl.class);
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final LocationRepository locationRepository;
     private final EmployeeMapper employeeMapper;
     private final AuditService auditService;
 
@@ -58,11 +71,23 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateResourceException("Email already exists: " + dto.getEmail());
         }
+        if (dto.getAadharNumber() != null && !dto.getAadharNumber().isBlank()
+                && employeeRepository.existsByAadharNumber(dto.getAadharNumber())) {
+            throw new DuplicateResourceException("Aadhar number already registered to another employee");
+        }
 
         Department department = departmentRepository.findById(dto.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found: " + dto.getDepartmentId()));
 
-        Employee employee = employeeMapper.toEntity(dto, department);
+        // Location is optional today (see EmployeeDTO.locationId comment) - resolve
+        // only if the caller actually provided one.
+        Location location = null;
+        if (dto.getLocationId() != null) {
+            location = locationRepository.findById(dto.getLocationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Location not found: " + dto.getLocationId()));
+        }
+
+        Employee employee = employeeMapper.toEntity(dto, department, location);
         Employee saved = employeeRepository.save(employee);
 
         auditService.log("CREATE", "Employee", saved.getId(), "Created employee: " + saved.getEmployeeCode());
@@ -84,10 +109,24 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new DuplicateResourceException("Email already exists: " + dto.getEmail());
         }
 
+        // Check duplicate Aadhar if changed
+        String newAadhar = dto.getAadharNumber();
+        boolean aadharChanged = newAadhar != null && !newAadhar.isBlank()
+                && !newAadhar.equals(employee.getAadharNumber());
+        if (aadharChanged && employeeRepository.existsByAadharNumber(newAadhar)) {
+            throw new DuplicateResourceException("Aadhar number already registered to another employee");
+        }
+
         Department department = departmentRepository.findById(dto.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found: " + dto.getDepartmentId()));
 
-        employeeMapper.updateEntity(employee, dto, department);
+        Location location = null;
+        if (dto.getLocationId() != null) {
+            location = locationRepository.findById(dto.getLocationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Location not found: " + dto.getLocationId()));
+        }
+
+        employeeMapper.updateEntity(employee, dto, department, location);
         Employee updated = employeeRepository.save(employee);
 
         auditService.log("UPDATE", "Employee", id, "Updated employee: " + updated.getEmployeeCode());

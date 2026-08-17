@@ -18,6 +18,16 @@ public class DepartmentMapper {
                 .employeeCount(employeeCount)
                 .build();
     }
+    public DepartmentDTO toDTOSimple(Department entity) {
+        if (entity == null) return null;
+        return DepartmentDTO.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .code(entity.getCode())
+                .description(entity.getDescription())
+                .active(entity.getActive())
+                .build();
+    }
 
     public Department toEntity(DepartmentDTO dto) {
         if (dto == null) return null;

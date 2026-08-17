@@ -24,6 +24,11 @@ public class DepartmentApiController {
     public ResponseEntity<ApiResponse<List<DepartmentDTO>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(departmentService.getAllActive()));
     }
+    
+    @GetMapping("/departments/active")
+    public ResponseEntity<ApiResponse<List<DepartmentDTO>>> getAllActiveSimple() {
+        return ResponseEntity.ok(ApiResponse.success(departmentService.getAllActiveSimple()));
+    }
 
     @GetMapping("/departments/{id}")
     public ResponseEntity<ApiResponse<DepartmentDTO>> getById(@PathVariable Long id) {
@@ -114,11 +119,21 @@ class LeaveApiController {
 class UserApiController {
 
     private final UserService userService;
+    private final RoleService roleService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserDTO>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers()));
+    }
+
+    // Frontend fetches the real, current roles from the DB instead of hardcoding
+    // role names - so the "New User" form dropdown can never drift out of sync
+    // with what's actually seeded/configured in the roles table.
+    @GetMapping("/roles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<RoleDTO>>> getRoles() {
+        return ResponseEntity.ok(ApiResponse.success(roleService.getAllRoles()));
     }
 
     @PostMapping
@@ -144,6 +159,31 @@ class FileApiController {
         var result = fileStorageService.storeFile(file, entityType, entityId, "user");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("File uploaded", result));
+    }
+
+    // Lists whatever's been uploaded for one entity (e.g. an employee's
+    // qualification certificate) - used to show "current file" when editing.
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<com.enterprise.ems.entity.FileUpload>>> list(
+            @RequestParam String entityType,
+            @RequestParam Long entityId) {
+        return ResponseEntity.ok(ApiResponse.success(fileStorageService.getFiles(entityType, entityId)));
+    }
+
+    // Streams the raw file back so the browser can open/download it
+    // (e.g. clicking "View certificate" on the employee form).
+    @GetMapping("/{id}/download")
+    public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> download(
+            @PathVariable Long id) throws java.io.IOException {
+        var meta = fileStorageService.getFile(id);
+        var path = java.nio.file.Paths.get(meta.getFilePath());
+        var resource = new org.springframework.core.io.UrlResource(path.toUri());
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        meta.getFileType() != null ? meta.getFileType() : "application/octet-stream"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + meta.getOriginalFilename() + "\"")
+                .body(resource);
     }
 }
 

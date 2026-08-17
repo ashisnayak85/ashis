@@ -27,8 +27,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const message = error.response?.data?.message || error.message || 'Something went wrong';
-    return Promise.reject({ ...error, message, status: error.response?.status });
+    const data = error.response?.data;
+    // GlobalExceptionHandler puts per-field messages here on @Valid failures,
+    // e.g. ["Location name is required", "Enter a valid contact number..."].
+    // Previously this was dropped, so callers only ever saw the generic
+    // "Validation failed" text in data.message.
+    const errors = data?.errors;
+    const message = data?.message || error.message || 'Something went wrong';
+    return Promise.reject({ ...error, message, errors, status: error.response?.status });
   }
 );
 

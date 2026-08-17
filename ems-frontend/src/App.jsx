@@ -8,11 +8,13 @@ import Dashboard from './pages/Dashboard';
 import EmployeeList from './pages/EmployeeList';
 import AllEmployeeList from './pages/AllEmployeeList';
 import Departments from './pages/Departments';
+import Locations from './pages/Locations';
 import Attendance from './pages/Attendance';
 import Leaves from './pages/Leaves';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import Ticketing from './pages/Ticketing';
 
 export default function App() {
   return (
@@ -28,10 +30,11 @@ export default function App() {
               <Route path="/employees" element={<EmployeeList />} />
               <Route path="/all-employees" element={<AllEmployeeList />} />
               <Route path="/departments" element={<Departments />} />
+              <Route path="/locations" element={<Locations />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/leaves" element={<Leaves />} />
               <Route path="/profile" element={<Profile />} />
-
+              <Route path="/ticketing" element={<Ticketing />} />
               <Route element={<ProtectedRoute role="ADMIN" />}>
                 <Route path="/admin/users" element={<Users />} />
               </Route>

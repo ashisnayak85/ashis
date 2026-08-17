@@ -83,4 +83,13 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .map(d -> departmentMapper.toDTO(d, employeeRepository.countByDepartmentId(d.getId())))
                 .toList();
     }
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "departments", key = "'allSimple'")
+    public List<DepartmentDTO> getAllActiveSimple() {
+        return departmentRepository.findAll().stream()
+                .filter(Department::getActive)
+                .map(departmentMapper::toDTOSimple)
+                .toList();
+    }
 }

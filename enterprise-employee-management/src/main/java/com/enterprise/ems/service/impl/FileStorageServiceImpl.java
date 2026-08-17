@@ -2,6 +2,7 @@ package com.enterprise.ems.service.impl;
 
 import com.enterprise.ems.entity.FileUpload;
 import com.enterprise.ems.exception.BusinessException;
+import com.enterprise.ems.exception.ResourceNotFoundException;
 import com.enterprise.ems.repository.FileUploadRepository;
 import com.enterprise.ems.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
@@ -70,5 +71,11 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public List<FileUpload> getFiles(String entityType, Long entityId) {
         return fileUploadRepository.findByEntityTypeAndEntityId(entityType, entityId);
+    }
+
+    @Override
+    public FileUpload getFile(Long id) {
+        return fileUploadRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("File not found: " + id));
     }
 }

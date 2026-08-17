@@ -11,18 +11,16 @@ public class UserDTO {
 
     private Long id;
 
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50)
-    private String username;
+    // Required only when CREATING a user - the admin picks an existing active
+    // employee instead of typing a username/email/password by hand.
+    @NotNull(message = "Employee is required")
+    private Long employeeId;
 
-    @NotBlank(message = "Email is required")
-    @Email
+    // Output-only fields: derived from the linked Employee, never taken from client input.
+    private String username;
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
-    private String password;
-
+    @NotBlank(message = "Role is required")
     private String roleName;
 
     private Boolean enabled;

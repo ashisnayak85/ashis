@@ -48,6 +48,14 @@ public class EmployeeApiController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getById(id)));
     }
 
+    // Active employees with no login yet - populates the "New User" picker so an admin
+    // can only grant access to a real, active employee, never a free-typed account.
+    @GetMapping("/available-for-user")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<java.util.List<EmployeeDTO>>> getAvailableForUser() {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getAvailableForUserCreation()));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<EmployeeDTO>> create(@Valid @RequestBody EmployeeDTO dto) {
         EmployeeDTO created = employeeService.create(dto);

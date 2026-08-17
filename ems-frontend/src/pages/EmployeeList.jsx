@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../api/employees';
+import { uploadFile, QUALIFICATION_CERT_ENTITY_TYPE } from '../api/files';
 import Pagination from '../components/Pagination';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
@@ -24,14 +25,30 @@ export default function EmployeeList() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleSave(payload) {
+  async function handleSave(payload, certificateFile) {
+    let saved;
     if (editing?.id) {
-      await updateEmployee(editing.id, payload);
+      const res = await updateEmployee(editing.id, payload);
+      saved = res.data;
       setSuccess('Employee updated');
     } else {
-      await createEmployee(payload);
+      const res = await createEmployee(payload);
+      saved = res.data;
       setSuccess('Employee created');
     }
+
+    // The certificate upload needs a real employee id, so it can only happen
+    // after the employee row exists (i.e. after create/update above).
+    // A failure here doesn't roll back the employee save - the record is
+    // already saved, so we surface the upload error but keep going.
+    if (certificateFile && saved?.id) {
+      try {
+        await uploadFile(certificateFile, QUALIFICATION_CERT_ENTITY_TYPE, saved.id);
+      } catch (err) {
+        setError(`Employee saved, but certificate upload failed: ${err.message}`);
+      }
+    }
+
     setEditing(null);
     load();
   }
@@ -73,6 +90,7 @@ export default function EmployeeList() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Department</th>
+                <th>Location</th>
                 <th>Designation</th>
                 <th>Active</th>
                 <th>Action</th>
@@ -85,6 +103,7 @@ export default function EmployeeList() {
                   <td>{emp.firstName} {emp.lastName}</td>
                   <td>{emp.email}</td>
                   <td>{emp.departmentName}</td>
+                  <td>{emp.locationName || '-'}</td>
                   <td>{emp.designation}</td>
                   <td>{emp.active ? 'Yes' : 'No'}</td>
                   <td className="row-actions">
@@ -93,7 +112,7 @@ export default function EmployeeList() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={7} className="empty-row">No employees found</td></tr>
+                <tr><td colSpan={8} className="empty-row">No employees found</td></tr>
               )}
             </tbody>
           </table>

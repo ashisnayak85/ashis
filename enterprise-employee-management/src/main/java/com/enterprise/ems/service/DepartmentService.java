@@ -14,4 +14,5 @@ public interface DepartmentService {
     void delete(Long id);
 
     List<DepartmentDTO> getAllActive();
+    List<DepartmentDTO> getAllActiveSimple(); // add this
 }

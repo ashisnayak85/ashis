@@ -18,3 +18,8 @@ export function logout() {
 export function me() {
   return api.get('/api/auth/me');
 }
+
+// Self-service password change - works for both ADMIN and EMPLOYEE roles.
+export function changePassword(currentPassword, newPassword) {
+  return api.post('/api/auth/change-password', { currentPassword, newPassword });
+}

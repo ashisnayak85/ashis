@@ -8,10 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+    // Active employees with no linked User account - powers the "create user" picker
+    List<Employee> findByActiveTrueAndUserIsNull();
 
     Optional<Employee> findByEmployeeCode(String employeeCode);
 
@@ -20,6 +24,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     boolean existsByEmployeeCode(String employeeCode);
 
     boolean existsByEmail(String email);
+
+    boolean existsByAadharNumber(String aadharNumber);
 
     Page<Employee> findByActiveTrue(Pageable pageable);
 
@@ -39,4 +45,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Page<Employee> searchAllEmployees(@Param("keyword") String keyword, Pageable pageable);
 
     long countByDepartmentId(Long departmentId);
+
+    long countByLocationId(Long locationId);
 }

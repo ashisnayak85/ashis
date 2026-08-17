@@ -7,9 +7,11 @@ const NAV_ITEMS = [
   { to: '/employees', label: 'Employees', initial: 'E' },
   { to: '/all-employees', label: 'All Employees', initial: 'A' },
   { to: '/departments', label: 'Departments', initial: 'P' },
+  { to: '/locations', label: 'Locations', initial: 'L' },
   { to: '/attendance', label: 'Attendance', initial: 'T' },
   { to: '/leaves', label: 'Leave', initial: 'L' },
   { to: '/admin/users', label: 'Users', initial: 'U', role: 'ADMIN' },
+  { to: '/Ticketing', label: 'Ticket', initial: 'T'},
 ];
 
 export default function Layout() {

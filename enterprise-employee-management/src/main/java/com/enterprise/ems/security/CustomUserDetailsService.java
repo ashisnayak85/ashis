@@ -28,10 +28,17 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+        // A login is only usable while it is (a) explicitly enabled AND (b) linked to
+        // an employee who is currently active. Deactivating an employee automatically
+        // blocks their login - no separate step needed.
+        boolean isEnabled = Boolean.TRUE.equals(user.getEnabled())
+                && user.getEmployee() != null
+                && Boolean.TRUE.equals(user.getEmployee().getActive());
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                user.getEnabled(),
+                isEnabled,
                 true, true, true,
                 user.getRoles().stream()
                         .map(role -> new SimpleGrantedAuthority(role.getName()))
