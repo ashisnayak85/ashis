@@ -19,6 +19,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     Optional<Employee> findByEmployeeCode(String employeeCode);
 
+    // Resolves "which employee record does this logged-in username correspond to" -
+    // the anchor for every self-service (dashboard/leaves/attendance) endpoint.
+    Optional<Employee> findByUserUsername(String username);
+
     Optional<Employee> findByEmail(String email);
 
     boolean existsByEmployeeCode(String employeeCode);
@@ -45,6 +49,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Page<Employee> searchAllEmployees(@Param("keyword") String keyword, Pageable pageable);
 
     long countByDepartmentId(Long departmentId);
+
+    long countByDesignationId(Long designationId);
 
     long countByLocationId(Long locationId);
 }

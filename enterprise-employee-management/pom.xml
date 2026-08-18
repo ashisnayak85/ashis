@@ -95,6 +95,21 @@ SPRING BOOT PARENT: Manages dependency versions automatically
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <!-- Actuator: exposes /actuator/health so deployments/monitoring can
+             confirm the app (and its DB connection) is actually up -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- OpenAPI/Swagger: auto-generates browsable API docs at /swagger-ui.html
+             from the existing @RestController annotations - no manual upkeep -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
         <!-- Lombok: Reduces boilerplate code -->
         <dependency>
             <groupId>org.projectlombok</groupId>

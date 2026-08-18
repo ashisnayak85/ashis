@@ -1,6 +1,7 @@
 package com.enterprise.ems.controller.api;
 
 import com.enterprise.ems.dto.ApiResponse;
+import com.enterprise.ems.repository.EmployeeRepository;
 import com.enterprise.ems.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +34,7 @@ import java.util.Map;
 public class AuthApiController {
 
     private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Map<String, Object>>> me(@AuthenticationPrincipal UserDetails user) {
@@ -41,10 +44,19 @@ public class AuthApiController {
         List<String> roles = user.getAuthorities().stream()
                 .map(Object::toString)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(Map.of(
-                "username", user.getUsername(),
-                "roles", roles
-        )));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("username", user.getUsername());
+        body.put("roles", roles);
+
+        // Not every login has a linked Employee (e.g. a pure admin/IT account) -
+        // these stay null and the frontend treats that as "no self-service views".
+        employeeRepository.findByUserUsername(user.getUsername()).ifPresent(emp -> {
+            body.put("employeeId", emp.getId());
+            body.put("employeeName", emp.getFullName());
+        });
+
+        return ResponseEntity.ok(ApiResponse.success(body));
     }
 
     @PostMapping("/change-password")

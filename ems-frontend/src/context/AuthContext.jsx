@@ -41,8 +41,16 @@ export function AuthProvider({ children }) {
     return !!user?.roles?.some((r) => r === `ROLE_${role}` || r === role);
   }
 
+  function hasAnyRole(roles) {
+    return roles.some((role) => hasRole(role));
+  }
+
+  // Employees are "ADMIN"/"MANAGER" (org-wide access) or plain "USER" -
+  // isStaff distinguishes the two everywhere self-service views differ from admin views.
+  const isStaff = hasAnyRole(['ADMIN', 'MANAGER']);
+
   return (
-    <AuthContext.Provider value={{ user, checking, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, checking, login, logout, hasRole, hasAnyRole, isStaff }}>
       {children}
     </AuthContext.Provider>
   );

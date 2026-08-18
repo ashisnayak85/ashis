@@ -35,13 +35,15 @@ public class EmployeeMapper {
                 .dateOfBirth(entity.getDateOfBirth())
                 .dateOfJoining(entity.getDateOfJoining())
                 .salary(entity.getSalary())
-                .designation(entity.getDesignation())
+                .gender(entity.getGender())
+                .designationId(entity.getDesignation() != null ? entity.getDesignation().getId() : null)
+                .designationName(entity.getDesignation() != null ? entity.getDesignation().getName() : null)
                 .qualification(entity.getQualification())
                 .yearOfPassing(entity.getYearOfPassing())
                 .totalExperience(entity.getTotalExperience())
                 .maritalStatus(entity.getMaritalStatus())
                 .aadharNumber(entity.getAadharNumber())
-                .salaryCalculationBasis(entity.getSalaryCalculationBasis())
+                .salaryCalculatedFrom(entity.getSalaryCalculatedFrom())
                 .presentAddressLine(present != null ? present.getAddressLine() : null)
                 .presentCityDistrict(present != null ? present.getCityOrDistrict() : null)
                 .presentState(present != null ? present.getState() : null)
@@ -72,7 +74,7 @@ public class EmployeeMapper {
                 .build();
     }
 
-    public Employee toEntity(EmployeeDTO dto, Department department, Location location) {
+    public Employee toEntity(EmployeeDTO dto, Department department, Location location, Designation designation) {
         if (dto == null) return null;
         return Employee.builder()
                 .id(dto.getId())
@@ -84,13 +86,13 @@ public class EmployeeMapper {
                 .dateOfBirth(dto.getDateOfBirth())
                 .dateOfJoining(dto.getDateOfJoining())
                 .salary(dto.getSalary())
-                .designation(dto.getDesignation())
+                .gender(blankToNull(dto.getGender()))
                 .qualification(dto.getQualification())
                 .yearOfPassing(dto.getYearOfPassing())
                 .totalExperience(dto.getTotalExperience())
                 .maritalStatus(blankToNull(dto.getMaritalStatus()))
                 .aadharNumber(blankToNull(dto.getAadharNumber()))
-                .salaryCalculationBasis(blankToNull(dto.getSalaryCalculationBasis()))
+                .salaryCalculatedFrom(dto.getSalaryCalculatedFrom())
                 .presentAddress(buildAddress(dto.getPresentAddressLine(), dto.getPresentCityDistrict(),
                         dto.getPresentState(), dto.getPresentPincode()))
                 .permanentAddress(buildAddress(dto.getPermanentAddressLine(), dto.getPermanentCityDistrict(),
@@ -115,11 +117,12 @@ public class EmployeeMapper {
                 .profilePhoto(dto.getProfilePhoto())
                 .department(department)
                 .location(location)
+                .designation(designation)
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
     }
 
-    public void updateEntity(Employee entity, EmployeeDTO dto, Department department, Location location) {
+    public void updateEntity(Employee entity, EmployeeDTO dto, Department department, Location location, Designation designation) {
         entity.setEmployeeCode(dto.getEmployeeCode());
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -128,13 +131,13 @@ public class EmployeeMapper {
         entity.setDateOfBirth(dto.getDateOfBirth());
         entity.setDateOfJoining(dto.getDateOfJoining());
         entity.setSalary(dto.getSalary());
-        entity.setDesignation(dto.getDesignation());
+        entity.setGender(blankToNull(dto.getGender()));
         entity.setQualification(dto.getQualification());
         entity.setYearOfPassing(dto.getYearOfPassing());
         entity.setTotalExperience(dto.getTotalExperience());
         entity.setMaritalStatus(blankToNull(dto.getMaritalStatus()));
         entity.setAadharNumber(blankToNull(dto.getAadharNumber()));
-        entity.setSalaryCalculationBasis(blankToNull(dto.getSalaryCalculationBasis()));
+        entity.setSalaryCalculatedFrom(dto.getSalaryCalculatedFrom());
         entity.setPresentAddress(buildAddress(dto.getPresentAddressLine(), dto.getPresentCityDistrict(),
                 dto.getPresentState(), dto.getPresentPincode()));
         entity.setPermanentAddress(buildAddress(dto.getPermanentAddressLine(), dto.getPermanentCityDistrict(),
@@ -161,6 +164,7 @@ public class EmployeeMapper {
         entity.setQualificationCertificateFileId(dto.getQualificationCertificateFileId());
         entity.setDepartment(department);
         entity.setLocation(location);
+        entity.setDesignation(designation);
         if (dto.getActive() != null) entity.setActive(dto.getActive());
     }
 

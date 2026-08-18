@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Unlike /api/employees (EmployeeApiController), which only returns active
  * employees, this endpoint returns EVERY row in the Employee table -
  * i.e. "SELECT * FROM Employee" - via EmployeeRepository#findAll(Pageable).
+ * Org-wide data -> admin/manager only.
  * ================================================================================
  */
 @RestController
@@ -30,6 +32,7 @@ public class AllEmployeeApiController {
     private final EmployeeService employeeService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<PageResponse<EmployeeDTO>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

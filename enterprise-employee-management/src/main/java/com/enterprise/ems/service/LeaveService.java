@@ -18,5 +18,8 @@ public interface LeaveService {
 
     PageResponse<LeaveDTO> getByEmployee(Long employeeId, Pageable pageable);
 
+    // Self-service history for the logged-in employee; status is optional (null = all).
+    PageResponse<LeaveDTO> getMyLeaves(Long employeeId, String status, Pageable pageable);
+
     List<LeaveDTO> getPendingLeaves();
 }

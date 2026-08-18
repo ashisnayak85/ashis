@@ -4,12 +4,14 @@ import com.enterprise.ems.constant.AppConstants;
 import com.enterprise.ems.dto.EmployeeDTO;
 import com.enterprise.ems.dto.PageResponse;
 import com.enterprise.ems.entity.Department;
+import com.enterprise.ems.entity.Designation;
 import com.enterprise.ems.entity.Employee;
 import com.enterprise.ems.entity.Location;
 import com.enterprise.ems.exception.DuplicateResourceException;
 import com.enterprise.ems.exception.ResourceNotFoundException;
 import com.enterprise.ems.mapper.EmployeeMapper;
 import com.enterprise.ems.repository.DepartmentRepository;
+import com.enterprise.ems.repository.DesignationRepository;
 import com.enterprise.ems.repository.EmployeeRepository;
 import com.enterprise.ems.repository.LocationRepository;
 import com.enterprise.ems.service.AuditService;
@@ -56,6 +58,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final LocationRepository locationRepository;
+    private final DesignationRepository designationRepository;
     private final EmployeeMapper employeeMapper;
     private final AuditService auditService;
 
@@ -87,7 +90,14 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .orElseThrow(() -> new ResourceNotFoundException("Location not found: " + dto.getLocationId()));
         }
 
-        Employee employee = employeeMapper.toEntity(dto, department, location);
+        // Designation is optional, same treatment as Location.
+        Designation designation = null;
+        if (dto.getDesignationId() != null) {
+            designation = designationRepository.findById(dto.getDesignationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Designation not found: " + dto.getDesignationId()));
+        }
+
+        Employee employee = employeeMapper.toEntity(dto, department, location, designation);
         Employee saved = employeeRepository.save(employee);
 
         auditService.log("CREATE", "Employee", saved.getId(), "Created employee: " + saved.getEmployeeCode());
@@ -126,7 +136,13 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .orElseThrow(() -> new ResourceNotFoundException("Location not found: " + dto.getLocationId()));
         }
 
-        employeeMapper.updateEntity(employee, dto, department, location);
+        Designation designation = null;
+        if (dto.getDesignationId() != null) {
+            designation = designationRepository.findById(dto.getDesignationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Designation not found: " + dto.getDesignationId()));
+        }
+
+        employeeMapper.updateEntity(employee, dto, department, location, designation);
         Employee updated = employeeRepository.save(employee);
 
         auditService.log("UPDATE", "Employee", id, "Updated employee: " + updated.getEmployeeCode());

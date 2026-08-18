@@ -32,6 +32,9 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public LeaveDTO applyLeave(LeaveDTO dto) {
+        if (dto.getEmployeeId() == null) {
+            throw new BusinessException("Employee is required");
+        }
         if (dto.getEndDate().isBefore(dto.getStartDate())) {
             throw new BusinessException("End date cannot be before start date");
         }
@@ -73,6 +76,23 @@ public class LeaveServiceImpl implements LeaveService {
     @Transactional(readOnly = true)
     public PageResponse<LeaveDTO> getByEmployee(Long employeeId, Pageable pageable) {
         Page<LeaveMaster> page = leaveRepository.findByEmployeeId(employeeId, pageable);
+        return PageResponse.<LeaveDTO>builder()
+                .content(page.getContent().stream().map(leaveMapper::toDTO).toList())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<LeaveDTO> getMyLeaves(Long employeeId, String status, Pageable pageable) {
+        Page<LeaveMaster> page = (status == null || status.isBlank())
+                ? leaveRepository.findByEmployeeId(employeeId, pageable)
+                : leaveRepository.findByEmployeeIdAndStatus(employeeId, status, pageable);
         return PageResponse.<LeaveDTO>builder()
                 .content(page.getContent().stream().map(leaveMapper::toDTO).toList())
                 .pageNumber(page.getNumber())

@@ -59,6 +59,21 @@ CREATE TABLE department (
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
+-- TABLE: designation
+-- WHY: Job titles (e.g. Software Engineer, HR Manager) - previously a free-text
+--      field on employee, moved to its own managed table (same pattern as
+--      department) so titles stay consistent and can be added/retired centrally.
+-- -----------------------------------------------------------------------------
+CREATE TABLE designation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(500),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------------------------------------
 -- TABLE: employee
 -- WHY: Core HR entity - personal and employment information
 -- -----------------------------------------------------------------------------
@@ -72,14 +87,14 @@ CREATE TABLE employee (
     date_of_birth DATE,
     date_of_joining DATE,
     salary DECIMAL(12,2),
-    designation VARCHAR(100),
+    gender VARCHAR(10),
     -- Qualification & experience
     qualification VARCHAR(100),
     year_of_passing INT,
     total_experience_years DECIMAL(4,1),
     marital_status VARCHAR(20),
     aadhar_number VARCHAR(12) UNIQUE,
-    salary_calculation_basis VARCHAR(20),
+    salary_calculated_from DATE,
     -- Present address
     present_address_line VARCHAR(255),
     present_city_district VARCHAR(100),
@@ -108,10 +123,12 @@ CREATE TABLE employee (
     profile_photo VARCHAR(255),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     department_id BIGINT,
+    designation_id BIGINT,
     user_id BIGINT UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES department(id),
+    FOREIGN KEY (designation_id) REFERENCES designation(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
@@ -204,10 +221,13 @@ INSERT INTO department (name, code, description) VALUES
 ('Human Resources', 'HR', 'Recruitment and employee welfare'),
 ('Finance', 'FIN', 'Accounting and financial planning');
 
-INSERT INTO employee (employee_code, first_name, last_name, email, mobile, date_of_joining, salary, designation, department_id) VALUES
-('EMP001', 'John', 'Doe', 'john.doe@eems.com', '9876543210', '2023-01-15', 75000.00, 'Software Engineer', 1),
-('EMP002', 'Jane', 'Smith', 'jane.smith@eems.com', '9876543211', '2022-06-01', 85000.00, 'HR Manager', 2),
-('EMP003', 'Robert', 'Johnson', 'robert.j@eems.com', '9876543212', '2021-03-10', 95000.00, 'Finance Lead', 3);
+-- NOTE: designation_id references the designation table, which must be
+-- populated first (e.g. via the app's Designation screen or its own INSERT)
+-- before employee rows can point at real designation ids.
+INSERT INTO employee (employee_code, first_name, last_name, email, mobile, date_of_joining, salary, department_id) VALUES
+('EMP001', 'John', 'Doe', 'john.doe@eems.com', '9876543210', '2023-01-15', 75000.00, 1),
+('EMP002', 'Jane', 'Smith', 'jane.smith@eems.com', '9876543211', '2022-06-01', 85000.00, 2),
+('EMP003', 'Robert', 'Johnson', 'robert.j@eems.com', '9876543212', '2021-03-10', 95000.00, 3);
 
 INSERT INTO attendance (employee_id, attendance_date, check_in_time, check_out_time, status) VALUES
 (1, CURDATE(), '09:00:00', '18:00:00', 'PRESENT'),

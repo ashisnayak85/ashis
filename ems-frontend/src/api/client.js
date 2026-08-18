@@ -28,13 +28,17 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const data = error.response?.data;
-    // GlobalExceptionHandler puts per-field messages here on @Valid failures,
-    // e.g. ["Location name is required", "Enter a valid contact number..."].
-    // Previously this was dropped, so callers only ever saw the generic
-    // "Validation failed" text in data.message.
+    // GlobalExceptionHandler puts human-readable messages here on @Valid failures,
+    // e.g. ["Email is required", "Enter a valid 10-digit Indian mobile number"].
     const errors = data?.errors;
+    // On a validation failure, ApiResponse.data is a {fieldName: message} map
+    // instead of the usual resource payload - lets a form highlight the exact
+    // input instead of only showing a generic banner.
+    const fieldErrors = data?.data && typeof data.data === 'object' && !Array.isArray(data.data)
+      ? data.data
+      : null;
     const message = data?.message || error.message || 'Something went wrong';
-    return Promise.reject({ ...error, message, errors, status: error.response?.status });
+    return Promise.reject({ ...error, message, errors, fieldErrors, status: error.response?.status });
   }
 );
 

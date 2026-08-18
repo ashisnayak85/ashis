@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Footer from './Footer';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', initial: 'D' },
-  { to: '/employees', label: 'Employees', initial: 'E' },
-  { to: '/all-employees', label: 'All Employees', initial: 'A' },
-  { to: '/departments', label: 'Departments', initial: 'P' },
-  { to: '/locations', label: 'Locations', initial: 'L' },
+  { to: '/employees', label: 'Employees', initial: 'E', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/all-employees', label: 'All Employees', initial: 'A', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/departments', label: 'Departments', initial: 'P', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/designations', label: 'Designations', initial: 'G', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/locations', label: 'Locations', initial: 'L', roles: ['ADMIN', 'MANAGER'] },
   { to: '/attendance', label: 'Attendance', initial: 'T' },
   { to: '/leaves', label: 'Leave', initial: 'L' },
-  { to: '/admin/users', label: 'Users', initial: 'U', role: 'ADMIN' },
-  { to: '/Ticketing', label: 'Ticket', initial: 'T'},
+  { to: '/admin/users', label: 'Users', initial: 'U', roles: ['ADMIN'] },
 ];
 
 export default function Layout() {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasAnyRole } = useAuth();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(false);
@@ -117,7 +118,7 @@ export default function Layout() {
       <div className="app-body">
         <aside className={`sidebar${sidebarPinned ? ' sidebar-pinned' : ''}`}>
           <div className="sidebar-links">
-            {NAV_ITEMS.filter((item) => !item.role || hasRole(item.role)).map((item) => (
+            {NAV_ITEMS.filter((item) => !item.roles || hasAnyRole(item.roles)).map((item) => (
               <NavLink key={item.to} to={item.to} className="sidebar-link" title={item.label}>
                 <span className="sidebar-link-icon">{item.initial}</span>
                 <span className="sidebar-link-label">{item.label}</span>
@@ -129,6 +130,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <Footer />
     </div>
   );
 }

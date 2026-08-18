@@ -106,6 +106,19 @@ body {
 /* ---------- Sidebar (collapsible: icon rail by default, expands on hover; pinned open via hamburger) ---------- */
 .app-body { display: flex; flex: 1; min-height: 0; position: relative; }
 
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 12px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+.app-footer-version { font-variant-numeric: tabular-nums; }
+
 .sidebar {
   width: 64px;
   flex-shrink: 0;
@@ -204,6 +217,19 @@ body {
 .modal-card-wide { width: 880px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-top: 12px; }
 .form-grid .span-2 { grid-column: span 2; }
+
+/* Field-level validation - pairs with EmployeeFormModal's fieldErrors map */
+input.input-error, select.input-error {
+  border-color: #dc2626;
+  outline: none;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+.field-error {
+  display: block;
+  color: #991b1b;
+  font-size: 12px;
+  margin-top: 4px;
+}
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
 fieldset { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px 18px; margin-top: 16px; }
@@ -231,6 +257,8 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .badge { padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
 .badge-success { background: #dcfce7; color: #166534; }
 .badge-muted { background: #f1f5f9; color: #64748b; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
 
 .banner { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; }
 .banner-error { background: #fee2e2; color: #991b1b; }

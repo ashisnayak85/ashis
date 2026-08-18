@@ -42,7 +42,14 @@ public class Attendance {
     private LocalTime checkOutTime;
 
     @Column(name = "status", nullable = false, length = 20)
-    private String status; // PRESENT, ABSENT, HALF_DAY
+    private String status; // PRESENT, ABSENT, HALF_DAY, ON_LEAVE
+
+    // Who/what recorded this punch: SELF (employee marked their own), ADMIN
+    // (HR/manager marked or corrected it), BIOMETRIC (pushed by the attendance
+    // machine). Defaults to ADMIN for rows created before this column existed.
+    @Column(name = "source", nullable = false, length = 20)
+    @Builder.Default
+    private String source = "ADMIN";
 
     @Column(name = "remarks", length = 255)
     private String remarks;

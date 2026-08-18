@@ -104,7 +104,7 @@ export default function EmployeeList() {
                   <td>{emp.email}</td>
                   <td>{emp.departmentName}</td>
                   <td>{emp.locationName || '-'}</td>
-                  <td>{emp.designation}</td>
+                  <td>{emp.designationName || '-'}</td>
                   <td>{emp.active ? 'Yes' : 'No'}</td>
                   <td className="row-actions">
                     <button className="btn btn-link" onClick={() => setEditing(emp)}>Edit</button>

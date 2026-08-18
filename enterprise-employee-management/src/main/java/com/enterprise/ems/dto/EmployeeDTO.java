@@ -35,7 +35,10 @@ public class EmployeeDTO {
     @Email(message = "Invalid email format")
     private String email;
 
-    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian mobile number")
+    // Was "^[6-9]\\d{9}$" (no "?" wrapper) - unlike every other optional pattern
+    // field below, this rejected a BLANK mobile number too, silently making it
+    // required in practice even though nothing in the UI marks it that way.
+    @Pattern(regexp = "^([6-9]\\d{9})?$", message = "Enter a valid 10-digit Indian mobile number")
     private String mobile;
 
     private LocalDate dateOfBirth;
@@ -46,7 +49,12 @@ public class EmployeeDTO {
     @Min(value = 0, message = "Salary cannot be negative")
     private BigDecimal salary;
 
-    private String designation;
+    @Pattern(regexp = "^(MALE|FEMALE|OTHER)?$", message = "Invalid gender")
+    private String gender;
+
+    // Designation is now a managed lookup (like department), selected by id.
+    private Long designationId;
+    private String designationName;
 
     // --- Qualification & Experience ---
     private String qualification;
@@ -64,8 +72,7 @@ public class EmployeeDTO {
     @Pattern(regexp = "^(\\d{12})?$", message = "Aadhar number must be exactly 12 digits")
     private String aadharNumber;
 
-    @Pattern(regexp = "^(MONTHLY|DAILY|HOURLY|ANNUAL)?$", message = "Invalid salary calculation basis")
-    private String salaryCalculationBasis;
+    private LocalDate salaryCalculatedFrom;
 
     // --- Present Address ---
     private String presentAddressLine;

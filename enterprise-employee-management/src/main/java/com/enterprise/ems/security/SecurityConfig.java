@@ -55,11 +55,20 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
             	    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             	    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            	    // The biometric device is a machine, not a browser - it has no session/
+            	    // cookie to carry a CSRF token, and it authenticates via the X-Device-Key
+            	    // header instead (checked in AttendanceApiController#biometricPunch).
+            	    .ignoringRequestMatchers("/api/attendance/biometric")
             	)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 .requestMatchers("/login", "/error").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                // The biometric machine can't do a session login - it authenticates via the
+                // X-Device-Key header checked inside AttendanceApiController#biometricPunch.
+                .requestMatchers("/api/attendance/biometric").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/manager/**", "/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
                 .anyRequest().authenticated()

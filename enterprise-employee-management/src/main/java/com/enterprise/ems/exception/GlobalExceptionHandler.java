@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /*
  * ================================================================================
@@ -65,12 +67,23 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.toList());
-        log.warn("Validation failed: {}", errors);
-        return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
+        // fieldErrors: {"email": "Invalid email format", ...} - lets the frontend
+        // highlight the exact input, not just show a generic banner.
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        List<String> messages = new ArrayList<>();
+        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
+            fieldErrors.put(fe.getField(), fe.getDefaultMessage());
+            messages.add(fe.getDefaultMessage());
+        }
+        log.warn("Validation failed: {}", fieldErrors);
+        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
+                .success(false)
+                .message("Please fix the highlighted field" + (fieldErrors.size() > 1 ? "s" : ""))
+                .data(fieldErrors)
+                .errors(messages)
+                .build();
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(Exception.class)

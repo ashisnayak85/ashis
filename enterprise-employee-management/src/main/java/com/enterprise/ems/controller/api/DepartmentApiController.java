@@ -62,20 +62,79 @@ public class DepartmentApiController {
 class AttendanceApiController {
 
     private final AttendanceService attendanceService;
+    private final com.enterprise.ems.security.CurrentEmployeeResolver currentEmployeeResolver;
 
+    // Shared secret the biometric device sends as X-Device-Key. Set BIOMETRIC_API_KEY
+    // in the environment for real deployments - see application.properties.
+    @org.springframework.beans.factory.annotation.Value("${biometric.api-key:}")
+    private String biometricApiKey;
+
+    // Admin/Manager marking or correcting attendance for ANY employee, any date.
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<AttendanceDTO>> mark(@Valid @RequestBody AttendanceDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Attendance marked", attendanceService.markAttendance(dto)));
     }
 
+    // Employee marking their OWN attendance for today. Available to any
+    // authenticated user - the employee is resolved from the session, never
+    // from the request body, so this can't be used to mark for someone else.
+    @PostMapping("/self")
+    public ResponseEntity<ApiResponse<AttendanceDTO>> markSelf(
+            @Valid @RequestBody AttendanceDTO dto,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Attendance marked", attendanceService.markSelfAttendance(employee.getId(), dto)));
+    }
+
+    // Ingestion endpoint for the biometric machine. Not a user session - the
+    // device authenticates with a shared API key (see BiometricDeviceAuthFilter /
+    // application.properties: biometric.api-key). Permitted anonymously at the
+    // Spring Security layer and gated by the key check inside this method.
+    @PostMapping("/biometric")
+    public ResponseEntity<ApiResponse<AttendanceDTO>> biometricPunch(
+            @Valid @RequestBody BiometricPunchDTO dto,
+            @RequestHeader(value = "X-Device-Key", required = false) String deviceKey) {
+        if (biometricApiKey == null || biometricApiKey.isBlank() || !biometricApiKey.equals(deviceKey)) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Invalid or missing device key"));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Punch recorded", attendanceService.recordBiometricPunch(dto)));
+    }
+
     @GetMapping("/employee/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<PageResponse<AttendanceDTO>>> getByEmployee(
             @PathVariable Long employeeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.success(
                 attendanceService.getByEmployee(employeeId, PageRequest.of(page, size))));
+    }
+
+    // Combined filter used by the "View Attendance" panel: employee, date range,
+    // and attendance type are all optional and can be mixed freely. A plain
+    // ROLE_USER always gets forced to their own employeeId here, regardless of
+    // what was passed in - so this same endpoint safely doubles as "my history".
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<AttendanceDTO>>> search(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        Long scopedEmployeeId = employeeId;
+        if (!currentEmployeeResolver.isPrivileged(principal)) {
+            scopedEmployeeId = currentEmployeeResolver.requireCurrentEmployee(principal).getId();
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.search(scopedEmployeeId, startDate, endDate, status, PageRequest.of(page, size))));
     }
 }
 
@@ -85,9 +144,19 @@ class AttendanceApiController {
 class LeaveApiController {
 
     private final LeaveService leaveService;
+    private final com.enterprise.ems.security.CurrentEmployeeResolver currentEmployeeResolver;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<LeaveDTO>> apply(@Valid @RequestBody LeaveDTO dto) {
+    public ResponseEntity<ApiResponse<LeaveDTO>> apply(
+            @Valid @RequestBody LeaveDTO dto,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        // A plain employee can only ever apply for themselves - the employeeId they
+        // sent (if any) is ignored and replaced with their own. ADMIN/MANAGER keep
+        // the ability to file leave on behalf of whichever employee they picked.
+        if (!currentEmployeeResolver.isPrivileged(principal)) {
+            dto.setEmployeeId(currentEmployeeResolver.requireCurrentEmployee(principal).getId());
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Leave applied", leaveService.applyLeave(dto)));
     }
@@ -110,6 +179,20 @@ class LeaveApiController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<List<LeaveDTO>>> getPending() {
         return ResponseEntity.ok(ApiResponse.success(leaveService.getPendingLeaves()));
+    }
+
+    // Self-service: "my leave history", optionally filtered by status
+    // (PENDING/APPROVED/REJECTED). Employee is always resolved from the session.
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<PageResponse<LeaveDTO>>> getMyLeaves(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        return ResponseEntity.ok(ApiResponse.success(
+                leaveService.getMyLeaves(employee.getId(), status, PageRequest.of(page, size))));
     }
 }
 
@@ -193,9 +276,22 @@ class FileApiController {
 class DashboardApiController {
 
     private final DashboardService dashboardService;
+    private final com.enterprise.ems.security.CurrentEmployeeResolver currentEmployeeResolver;
 
     @GetMapping("/stats")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<DashboardStats>> getStats() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getStats()));
+    }
+
+    // Personal dashboard for a plain ROLE_USER login - always scoped to whoever
+    // is actually signed in, never to an id supplied by the caller.
+    @GetMapping("/my-stats")
+    public ResponseEntity<ApiResponse<MyDashboardStats>> getMyStats(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        return ResponseEntity.ok(ApiResponse.success(
+                dashboardService.getMyStats(employee.getId(), employee.getFullName())));
     }
 }

@@ -69,7 +69,7 @@ export default function AllEmployeeList() {
                   <td>{emp.firstName} {emp.lastName}</td>
                   <td>{emp.email}</td>
                   <td>{emp.departmentName}</td>
-                  <td>{emp.designation}</td>
+                  <td>{emp.designationName || '-'}</td>
                   <td>
                     <span className={emp.active ? 'badge badge-success' : 'badge badge-muted'}>
                       {emp.active ? 'Active' : 'Inactive'}

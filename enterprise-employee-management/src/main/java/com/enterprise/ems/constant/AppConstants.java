@@ -32,4 +32,14 @@ public final class AppConstants {
     public static final String ATTENDANCE_PRESENT = "PRESENT";
     public static final String ATTENDANCE_ABSENT = "ABSENT";
     public static final String ATTENDANCE_HALF_DAY = "HALF_DAY";
+    public static final String ATTENDANCE_ON_LEAVE = "ON_LEAVE";
+
+    // Attendance source - who/what recorded the punch
+    public static final String ATTENDANCE_SOURCE_SELF = "SELF";
+    public static final String ATTENDANCE_SOURCE_ADMIN = "ADMIN";
+    public static final String ATTENDANCE_SOURCE_BIOMETRIC = "BIOMETRIC";
+
+    // Biometric device punch types
+    public static final String PUNCH_IN = "IN";
+    public static final String PUNCH_OUT = "OUT";
 }

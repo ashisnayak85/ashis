@@ -53,8 +53,9 @@ public class Employee {
     @Column(name = "salary", precision = 12, scale = 2)
     private BigDecimal salary;
 
-    @Column(name = "designation", length = 100)
-    private String designation;
+    // MALE / FEMALE / OTHER
+    @Column(name = "gender", length = 10)
+    private String gender;
 
     // --- Qualification & Experience ---
     @Column(name = "qualification", length = 100)
@@ -75,9 +76,11 @@ public class Employee {
     @Column(name = "aadhar_number", unique = true, length = 12)
     private String aadharNumber;
 
-    // MONTHLY / DAILY / HOURLY / ANNUAL - basis payroll uses to compute salary.
-    @Column(name = "salary_calculation_basis", length = 20)
-    private String salaryCalculationBasis;
+    // Date from which salary is calculated for this employee - can differ from
+    // dateOfJoining (e.g. a mid-month joiner whose paid salary starts the 1st
+    // of the following month).
+    @Column(name = "salary_calculated_from")
+    private LocalDate salaryCalculatedFrom;
 
     @Embedded
     @AttributeOverrides({
@@ -119,6 +122,12 @@ public class Employee {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
+
+    // Replaces the old free-text "designation" column - now a managed lookup
+    // table (same pattern as Department) so job titles stay consistent.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "designation_id")
+    private Designation designation;
 
     // Independent from Department on purpose (see Location's class comment) -
     // nullable for now so existing employee rows don't break; tighten to

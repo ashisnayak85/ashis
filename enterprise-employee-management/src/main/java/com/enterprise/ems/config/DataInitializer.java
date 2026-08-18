@@ -36,6 +36,7 @@ public class DataInitializer {
             UserRepository userRepository,
             DepartmentRepository departmentRepository,
             LocationRepository locationRepository,
+            DesignationRepository designationRepository,
             EmployeeRepository employeeRepository,
             PasswordEncoder passwordEncoder) {
 
@@ -61,6 +62,15 @@ public class DataInitializer {
                     .name("Mumbai Office").code("BOM").city("Mumbai").state("Maharashtra")
                     .country("India").pincode("400001").active(true).build());
 
+            // Designations - previously free text on Employee, now a managed lookup
+            // table (same pattern as Department).
+            Designation sysAdminDesignation = designationRepository.save(
+                    Designation.builder().name("System Administrator").active(true).build());
+            Designation softwareEngineerDesignation = designationRepository.save(
+                    Designation.builder().name("Software Engineer").active(true).build());
+            Designation hrManagerDesignation = designationRepository.save(
+                    Designation.builder().name("HR Manager").active(true).build());
+
             // --- Bootstrap admin: Employee first, then User, then link them ---
             // Mirrors exactly how UserServiceImpl.createUser() links the two, so the
             // very first account behaves the same way as every account created after it.
@@ -68,7 +78,7 @@ public class DataInitializer {
                     .employeeCode("ADM001").firstName("System").lastName("Administrator")
                     .email("admin@eems.com").mobile("9999999999")
                     .dateOfJoining(LocalDate.now())
-                    .designation("System Administrator")
+                    .designation(sysAdminDesignation)
                     .department(admin).location(bangalore).active(true).build());
 
             Set<Role> adminRoles = new HashSet<>();
@@ -99,14 +109,14 @@ public class DataInitializer {
                     .employeeCode("EMP001").firstName("John").lastName("Doe")
                     .email("john.doe@eems.com").mobile("9876543210")
                     .dateOfJoining(LocalDate.of(2023, 1, 15))
-                    .salary(new BigDecimal("75000")).designation("Software Engineer")
+                    .salary(new BigDecimal("75000")).designation(softwareEngineerDesignation)
                     .department(it).location(bangalore).active(true).build());
 
             employeeRepository.save(Employee.builder()
                     .employeeCode("EMP002").firstName("Jane").lastName("Smith")
                     .email("jane.smith@eems.com").mobile("9876543211")
                     .dateOfJoining(LocalDate.of(2022, 6, 1))
-                    .salary(new BigDecimal("85000")).designation("HR Manager")
+                    .salary(new BigDecimal("85000")).designation(hrManagerDesignation)
                     .department(hr).location(mumbai).active(true).build());
         };
     }

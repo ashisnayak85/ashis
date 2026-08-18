@@ -13,7 +13,10 @@ public class LeaveDTO {
 
     private Long id;
 
-    @NotNull(message = "Employee is required")
+    // No @NotNull here on purpose: for a plain employee this is intentionally
+    // omitted by the frontend and filled in server-side (LeaveApiController)
+    // from their session before it ever reaches validation/the service layer.
+    // ADMIN/MANAGER must still supply it - enforced in LeaveApiController/LeaveServiceImpl.
     private Long employeeId;
 
     private String employeeName;
