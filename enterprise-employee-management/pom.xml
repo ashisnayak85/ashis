@@ -30,6 +30,10 @@ SPRING BOOT PARENT: Manages dependency versions automatically
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Deep Java Library: free, open-source, self-hosted ML runtime - no
+             cloud API key, no per-request billing. Used for face verification
+             on self-attendance punches (see FaceRecognitionServiceImpl). -->
+        <djl.version>0.31.1</djl.version>
     </properties>
 
     <dependencies>
@@ -140,6 +144,25 @@ SPRING BOOT PARENT: Manages dependency versions automatically
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- ===================================================================
+             Face verification for self-attendance (FaceRecognitionServiceImpl)
+             DJL = Deep Java Library, Apache-2.0 licensed, runs entirely on your
+             own server - free, no API key, no per-call cost, no external service.
+             When attendance.face-verification.enabled=false, none of this model
+             code ever loads or runs (see the lazy-load guard in the service),
+             so it costs nothing at runtime either.
+             =================================================================== -->
+        <dependency>
+            <groupId>ai.djl</groupId>
+            <artifactId>api</artifactId>
+            <version>${djl.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-engine</artifactId>
+            <version>${djl.version}</version>
         </dependency>
     </dependencies>
 

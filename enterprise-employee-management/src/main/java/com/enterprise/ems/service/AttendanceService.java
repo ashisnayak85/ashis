@@ -14,10 +14,22 @@ public interface AttendanceService {
     // Persisted with source=ADMIN.
     AttendanceDTO markAttendance(AttendanceDTO dto);
 
-    // Employee marking their OWN attendance. employeeId on the incoming dto is
-    // ignored - always resolved from the session - and the date is forced to
-    // today (no backdating/future-dating from self-service). source=SELF.
-    AttendanceDTO markSelfAttendance(Long employeeId, AttendanceDTO dto);
+    // Employee punching their OWN attendance in, right now. Always today, always
+    // the caller, always the server's clock - never a time the client sent.
+    // Throws if they've already punched in today. faceVerified must only ever
+    // be a value the CALLER computed itself via a real FaceRecognitionService
+    // check (or false when the feature is off) - never a value taken from the
+    // client's request body, or a user could just claim "verified: true".
+    AttendanceDTO punchIn(Long employeeId, String remarks, boolean faceVerified);
+
+    // Employee punching their OWN attendance out, right now. Throws if they
+    // haven't punched in yet today, or have already punched out. Same
+    // faceVerified caution as punchIn applies here.
+    AttendanceDTO punchOut(Long employeeId, String remarks, boolean faceVerified);
+
+    // Today's attendance row for this employee, or null if they haven't punched
+    // in yet - lets the frontend decide whether to show "Punch In" or "Punch Out".
+    AttendanceDTO getTodayStatus(Long employeeId);
 
     // Ingestion endpoint for a biometric device push. Finds-or-creates the day's
     // attendance row for the employee and fills in check-in or check-out based on

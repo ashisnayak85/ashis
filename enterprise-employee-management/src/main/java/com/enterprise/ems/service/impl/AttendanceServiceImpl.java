@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -39,12 +40,78 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public AttendanceDTO markSelfAttendance(Long employeeId, AttendanceDTO dto) {
-        // Self-service can only ever be for the caller, and only for today -
-        // both are enforced here regardless of what the client sent.
-        dto.setEmployeeId(employeeId);
-        dto.setAttendanceDate(LocalDate.now());
-        return createAttendance(dto, AppConstants.ATTENDANCE_SOURCE_SELF, "self");
+    public AttendanceDTO punchIn(Long employeeId, String remarks, boolean faceVerified) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+
+        LocalDate today = LocalDate.now();
+        Attendance attendance = attendanceRepository.findByEmployeeIdAndAttendanceDate(employeeId, today)
+                .orElseGet(() -> Attendance.builder()
+                        .employee(employee)
+                        .attendanceDate(today)
+                        .status(AppConstants.ATTENDANCE_PRESENT)
+                        .build());
+
+        if (attendance.getCheckInTime() != null) {
+            throw new BusinessException("Already punched in for today at " + attendance.getCheckInTime());
+        }
+
+        // Server clock only - never trust a time value from the client, since a
+        // person can freely change their device's date/time to fake an earlier
+        // arrival. LocalTime.now() is the server's own clock, not anything sent
+        // in the request.
+        attendance.setCheckInTime(LocalTime.now());
+        attendance.setSource(AppConstants.ATTENDANCE_SOURCE_SELF);
+        attendance.setFaceVerified(faceVerified);
+        if (remarks != null && !remarks.isBlank()) {
+            attendance.setRemarks(remarks);
+        }
+
+        Attendance saved = attendanceRepository.save(attendance);
+        auditService.log("CREATE", "Attendance", saved.getId(),
+                "Self punch-in for employee: " + employee.getEmployeeCode() + (faceVerified ? " (face verified)" : ""));
+        return attendanceMapper.toDTO(saved);
+    }
+
+    @Override
+    public AttendanceDTO punchOut(Long employeeId, String remarks, boolean faceVerified) {
+        LocalDate today = LocalDate.now();
+        Attendance attendance = attendanceRepository.findByEmployeeIdAndAttendanceDate(employeeId, today)
+                .orElseThrow(() -> new BusinessException("You haven't punched in today yet"));
+
+        if (attendance.getCheckInTime() == null) {
+            throw new BusinessException("You haven't punched in today yet");
+        }
+        if (attendance.getCheckOutTime() != null) {
+            throw new BusinessException("Already punched out for today at " + attendance.getCheckOutTime());
+        }
+
+        attendance.setCheckOutTime(LocalTime.now());
+        // Punch-out is verified independently of punch-in - someone could
+        // theoretically be verified at 9am and hand their session to someone
+        // else by 5pm, so re-checking on the way out matters too. Keep the
+        // flag true if EITHER punch-in or punch-out was actually verified,
+        // so a disabled-at-punch-out check doesn't erase a real punch-in match.
+        attendance.setFaceVerified(attendance.isFaceVerified() || faceVerified);
+        if (remarks != null && !remarks.isBlank()) {
+            attendance.setRemarks(remarks);
+        }
+
+        Attendance saved = attendanceRepository.save(attendance);
+        auditService.log("UPDATE", "Attendance", saved.getId(),
+                "Self punch-out for employee: " + attendance.getEmployee().getEmployeeCode() + (faceVerified ? " (face verified)" : ""));
+        return attendanceMapper.toDTO(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AttendanceDTO getTodayStatus(Long employeeId) {
+        // Deliberately returns null (not a 404) when there's no row yet - "haven't
+        // punched in today" is a normal state the frontend uses to show the Punch In
+        // button, not an error condition.
+        return attendanceRepository.findByEmployeeIdAndAttendanceDate(employeeId, LocalDate.now())
+                .map(attendanceMapper::toDTO)
+                .orElse(null);
     }
 
     private AttendanceDTO createAttendance(AttendanceDTO dto, String source, String actorDescription) {
@@ -64,6 +131,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Attendance entity = attendanceMapper.toEntity(dto, employee);
         entity.setSource(source);
+        // Never face-verified - this path is HR/admin manually marking or
+        // correcting a record, not a live self-punch with a photo.
+        entity.setFaceVerified(false);
         Attendance saved = attendanceRepository.save(entity);
         auditService.log("CREATE", "Attendance", saved.getId(),
                 "Marked attendance (" + actorDescription + ") for employee: " + employee.getEmployeeCode());

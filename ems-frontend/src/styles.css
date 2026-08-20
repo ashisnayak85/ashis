@@ -273,3 +273,19 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .auth-card { background: white; padding: 32px; border-radius: 12px; width: 360px; max-width: 90vw; box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 14px; }
 .auth-card h1 { font-size: 1.3rem; margin: 0; }
 .auth-subtitle { color: #64748b; margin: 0 0 4px 0; font-size: 0.9rem; }
+
+/* ---------- Face capture (self-attendance verification) ---------- */
+.face-capture { display: flex; flex-direction: column; gap: 10px; }
+.face-capture h3 { margin: 0; font-size: 1.05rem; }
+.face-capture-frame {
+  width: 260px; height: 260px; max-width: 100%; border-radius: 12px; overflow: hidden;
+  background: #0f172a; display: flex; align-items: center; justify-content: center;
+  border: 2px solid #e2e8f0;
+}
+.face-capture-video { width: 100%; height: 100%; object-fit: cover; }
+/* Only mirror the LIVE preview so it feels like a mirror to look into - the
+   captured still photo (an <img>, no mirrored class) is left unmirrored,
+   since that's the actual orientation sent to the server. */
+.face-capture-mirrored { transform: scaleX(-1); }
+.face-capture-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.face-status-badge { font-size: 0.8rem; margin-left: 8px; }

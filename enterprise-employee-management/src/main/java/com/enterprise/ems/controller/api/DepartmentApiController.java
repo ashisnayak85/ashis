@@ -62,6 +62,7 @@ public class DepartmentApiController {
 class AttendanceApiController {
 
     private final AttendanceService attendanceService;
+    private final com.enterprise.ems.service.FaceRecognitionService faceRecognitionService;
     private final com.enterprise.ems.security.CurrentEmployeeResolver currentEmployeeResolver;
 
     // Shared secret the biometric device sends as X-Device-Key. Set BIOMETRIC_API_KEY
@@ -80,14 +81,83 @@ class AttendanceApiController {
     // Employee marking their OWN attendance for today. Available to any
     // authenticated user - the employee is resolved from the session, never
     // from the request body, so this can't be used to mark for someone else.
-    @PostMapping("/self")
-    public ResponseEntity<ApiResponse<AttendanceDTO>> markSelf(
-            @Valid @RequestBody AttendanceDTO dto,
+    // Split into punch-in/punch-out rather than a free-form form: the server
+    // clock decides the time, and the flow enforces you can't punch in twice
+    // or punch out before punching in.
+    //
+    // Accepts multipart/form-data (not JSON) so the same endpoint works
+    // whether or not face verification is switched on: "remarks" is always
+    // optional text, "image" is an optional captured photo that is REQUIRED
+    // and CHECKED only when attendance.face-verification.enabled=true (see
+    // FaceRecognitionService#verifyIfRequired). With the flag off, "image" is
+    // simply ignored and this behaves exactly like the old JSON-only version.
+    @PostMapping(value = "/self/punch-in", consumes = {
+            org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE,
+            org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE
+    })
+    public ResponseEntity<ApiResponse<AttendanceDTO>> punchIn(
+            @RequestParam(value = "remarks", required = false) String remarks,
+            @RequestParam(value = "image", required = false) MultipartFile image,
             @org.springframework.security.core.annotation.AuthenticationPrincipal
             org.springframework.security.core.userdetails.UserDetails principal) {
         var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        // Throws BusinessException (-> 400) if face verification is on and the
+        // photo is missing/doesn't match - punch-in never proceeds in that case.
+        boolean faceVerified = faceRecognitionService.verifyIfRequired(employee.getId(), image);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Attendance marked", attendanceService.markSelfAttendance(employee.getId(), dto)));
+                .body(ApiResponse.success("Punched in", attendanceService.punchIn(employee.getId(), remarks, faceVerified)));
+    }
+
+    @PostMapping(value = "/self/punch-out", consumes = {
+            org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE,
+            org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE
+    })
+    public ResponseEntity<ApiResponse<AttendanceDTO>> punchOut(
+            @RequestParam(value = "remarks", required = false) String remarks,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        boolean faceVerified = faceRecognitionService.verifyIfRequired(employee.getId(), image);
+        return ResponseEntity.ok(ApiResponse.success("Punched out", attendanceService.punchOut(employee.getId(), remarks, faceVerified)));
+    }
+
+    // Tells the frontend whether to show the camera step at all (enabled) and
+    // whether THIS employee still needs to enroll their face first (enrolled).
+    // The single source of truth for "is this feature on" - the React app
+    // never hardcodes this, it always asks the server.
+    @GetMapping("/self/face/status")
+    public ResponseEntity<ApiResponse<com.enterprise.ems.dto.FaceStatusDTO>> faceStatus(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        boolean enabled = faceRecognitionService.isEnabled();
+        boolean enrolled = enabled && faceRecognitionService.hasEnrollment(employee.getId());
+        return ResponseEntity.ok(ApiResponse.success(
+                com.enterprise.ems.dto.FaceStatusDTO.builder().enabled(enabled).enrolled(enrolled).build()));
+    }
+
+    // One-time (or re-doable) capture of the employee's own reference face.
+    // Same "resolve from session" pattern as punch-in/out - an employee can
+    // only ever enroll their own face here, never someone else's.
+    @PostMapping(value = "/self/face/enroll", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> enrollFace(
+            @RequestParam("image") MultipartFile image,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        faceRecognitionService.enroll(employee.getId(), image, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Face enrolled successfully", null));
+    }
+
+    // Today's status for the logged-in employee - null data means "not punched
+    // in yet today", which the frontend uses to decide which button to show.
+    @GetMapping("/self/today")
+    public ResponseEntity<ApiResponse<AttendanceDTO>> myTodayStatus(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        return ResponseEntity.ok(ApiResponse.success(attendanceService.getTodayStatus(employee.getId())));
     }
 
     // Ingestion endpoint for the biometric machine. Not a user session - the
@@ -135,6 +205,70 @@ class AttendanceApiController {
         }
         return ResponseEntity.ok(ApiResponse.success(
                 attendanceService.search(scopedEmployeeId, startDate, endDate, status, PageRequest.of(page, size))));
+    }
+}
+
+/*
+ * ================================================================================
+ * PURPOSE: Admin/Manager face-enrollment management - "for all the employees",
+ * not just the self-service enrollment an employee does for themselves.
+ * ================================================================================
+ * Lets HR/admin (re-)enroll ANY employee's face (e.g. onboarding someone who
+ * can't do it themselves yet, or fixing a bad first capture), check whether a
+ * given employee is enrolled, review the backup history of past enrollments,
+ * and - the diagnostic tool this exists for - run a real photo against an
+ * employee's enrolled face and see the ACTUAL similarity score, not just a
+ * pass/fail, to figure out why real punch-ins are being rejected.
+ * ================================================================================
+ */
+@RestController
+@RequestMapping("/api/attendance/admin/face")
+@RequiredArgsConstructor
+class FaceAdminApiController {
+
+    private final com.enterprise.ems.service.FaceRecognitionService faceRecognitionService;
+
+    @GetMapping("/status/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<com.enterprise.ems.dto.FaceStatusDTO>> status(@PathVariable Long employeeId) {
+        boolean enabled = faceRecognitionService.isEnabled();
+        boolean enrolled = enabled && faceRecognitionService.hasEnrollment(employeeId);
+        return ResponseEntity.ok(ApiResponse.success(
+                com.enterprise.ems.dto.FaceStatusDTO.builder().enabled(enabled).enrolled(enrolled).build()));
+    }
+
+    // Admin (re-)enrolling ANY employee's face. If this employee already has
+    // an enrollment, the previous one is automatically backed up (see
+    // FaceRecognitionService#enroll) before being overwritten - nothing is lost.
+    @PostMapping(value = "/enroll/{employeeId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<Void>> enroll(
+            @PathVariable Long employeeId,
+            @RequestParam("image") MultipartFile image,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        faceRecognitionService.enroll(employeeId, image, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Face enrolled successfully", null));
+    }
+
+    // The diagnostic "observe" tool: runs the same comparison the real
+    // punch-in uses, but returns the actual similarity score and threshold
+    // instead of just throwing on a mismatch - use this to see WHY a
+    // particular employee is failing verification (borderline near-miss vs.
+    // wildly off) rather than guessing from server logs.
+    @PostMapping(value = "/test-verify/{employeeId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<com.enterprise.ems.dto.FaceVerifyResultDTO>> testVerify(
+            @PathVariable Long employeeId,
+            @RequestParam("image") MultipartFile image) {
+        return ResponseEntity.ok(ApiResponse.success(faceRecognitionService.testVerify(employeeId, image)));
+    }
+
+    @GetMapping("/history/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<List<com.enterprise.ems.dto.FaceEnrollmentHistoryDTO>>> history(
+            @PathVariable Long employeeId) {
+        return ResponseEntity.ok(ApiResponse.success(faceRecognitionService.getHistory(employeeId)));
     }
 }
 

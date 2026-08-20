@@ -54,6 +54,15 @@ public class Attendance {
     @Column(name = "remarks", length = 255)
     private String remarks;
 
+    // True only when this SELF punch was matched against the employee's
+    // enrolled face by FaceRecognitionService right before saving. Stays false
+    // for ADMIN/BIOMETRIC rows and for SELF rows recorded while the feature is
+    // disabled - lets HR reports/filters distinguish verified self-punches
+    // from unverified ones instead of trusting the source column alone.
+    @Column(name = "face_verified", nullable = false)
+    @Builder.Default
+    private boolean faceVerified = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -39,4 +39,10 @@ public class AttendanceDTO {
     private String source;
 
     private String remarks;
+
+    // Read-only from the client's point of view, same reasoning as `source`:
+    // the server sets this itself right after a real face match succeeds
+    // (see AttendanceServiceImpl#punchIn/punchOut). A client can never set
+    // this to true by sending it in the request body.
+    private Boolean faceVerified;
 }
