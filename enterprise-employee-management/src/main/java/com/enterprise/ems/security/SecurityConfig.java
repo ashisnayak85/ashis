@@ -64,6 +64,9 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 .requestMatchers("/login", "/error").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                // Forgot/reset password must work for a logged-out, locked-out user -
+                // that's the whole point of the flow, so both are unauthenticated.
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                 // The biometric machine can't do a session login - it authenticates via the
                 // X-Device-Key header checked inside AttendanceApiController#biometricPunch.
                 .requestMatchers("/api/attendance/biometric").permitAll()

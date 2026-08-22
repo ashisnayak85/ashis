@@ -50,6 +50,25 @@ public class EmployeeApiController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    // Same "search" filter as getAll above, but returns the full matching set
+    // as a downloadable .xlsx instead of a paginated JSON page.
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> export(@RequestParam(required = false) String search) {
+        byte[] xlsx = employeeService.exportEmployees(search);
+        return excelResponse(xlsx, "employees");
+    }
+
+    private ResponseEntity<byte[]> excelResponse(byte[] xlsx, String filenamePrefix) {
+        String filename = filenamePrefix + "-" + java.time.LocalDate.now() + ".xlsx";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(xlsx);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<EmployeeDTO>> getById(@PathVariable Long id) {

@@ -16,6 +16,8 @@ public class DepartmentMapper {
                 .description(entity.getDescription())
                 .active(entity.getActive())
                 .employeeCount(employeeCount)
+                .headOfDepartmentId(entity.getHeadOfDepartment() != null ? entity.getHeadOfDepartment().getId() : null)
+                .headOfDepartmentName(entity.getHeadOfDepartment() != null ? entity.getHeadOfDepartment().getFullName() : null)
                 .build();
     }
     public DepartmentDTO toDTOSimple(Department entity) {
@@ -26,6 +28,8 @@ public class DepartmentMapper {
                 .code(entity.getCode())
                 .description(entity.getDescription())
                 .active(entity.getActive())
+                .headOfDepartmentId(entity.getHeadOfDepartment() != null ? entity.getHeadOfDepartment().getId() : null)
+                .headOfDepartmentName(entity.getHeadOfDepartment() != null ? entity.getHeadOfDepartment().getFullName() : null)
                 .build();
     }
 

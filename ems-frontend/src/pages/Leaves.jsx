@@ -1,16 +1,55 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getEmployees } from '../api/employees';
-import { applyLeave, getPendingLeaves, approveLeave, rejectLeave, getMyLeaves } from '../api/leaves';
+import { applyLeave, searchLeaves, approveLeave, rejectLeave, getMyLeaves, exportLeaves, exportMyLeaves } from '../api/leaves';
 import Pagination from '../components/Pagination';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
 import { useAuth } from '../context/AuthContext';
+import ExcelIcon from '../components/ExcelIcon';
 
 const LEAVE_TYPES = ['CASUAL', 'SICK', 'EARNED', 'UNPAID'];
 const STATUS_OPTIONS = ['PENDING', 'APPROVED', 'REJECTED'];
 
+const EMPTY_FILTERS = { status: '', from: '', to: '', employeeName: '' };
+
 function StatusBadge({ status }) {
   const cls = status === 'APPROVED' ? 'badge-success' : status === 'REJECTED' ? 'badge-danger' : 'badge-warning';
   return <span className={`badge ${cls}`}>{status}</span>;
+}
+
+// Shared by both panels - status select + date-range pair. "children" lets the
+// admin panel inject its employee-name field without duplicating the rest.
+function FilterBar({ filters, onChange, onClear, children }) {
+  return (
+    <div className="filter-bar">
+      <label>
+        Status
+        <select value={filters.status} onChange={(e) => onChange({ ...filters, status: e.target.value })}>
+          <option value="">All</option>
+          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </label>
+      <label>
+        From
+        <input
+          type="date"
+          value={filters.from}
+          max={filters.to || undefined}
+          onChange={(e) => onChange({ ...filters, from: e.target.value })}
+        />
+      </label>
+      <label>
+        To
+        <input
+          type="date"
+          value={filters.to}
+          min={filters.from || undefined}
+          onChange={(e) => onChange({ ...filters, to: e.target.value })}
+        />
+      </label>
+      {children}
+      <button type="button" className="btn btn-link filter-clear" onClick={onClear}>Clear filters</button>
+    </div>
+  );
 }
 
 export default function Leaves() {
@@ -29,35 +68,53 @@ export default function Leaves() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Staff (ADMIN/MANAGER): approvals queue for everyone
-  const [pending, setPending] = useState([]);
+  // Staff (ADMIN/MANAGER): leave requests across everyone, filterable + paginated.
+  const [adminFilters, setAdminFilters] = useState(EMPTY_FILTERS);
+  const [adminPage, setAdminPage] = useState(0);
+  const [adminResults, setAdminResults] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
 
-  // Everyone: their own leave history, optionally filtered by status
-  const [myStatus, setMyStatus] = useState('');
+  // Everyone: their own leave history, filterable + paginated (no employee filter - always themselves).
+  const [myFilters, setMyFilters] = useState(EMPTY_FILTERS);
   const [myPage, setMyPage] = useState(0);
   const [myLeaves, setMyLeaves] = useState(null);
+
+  const [adminExporting, setAdminExporting] = useState(false);
+  const [myExporting, setMyExporting] = useState(false);
 
   useEffect(() => {
     if (isStaff) getEmployees({ page: 0, size: 100 }).then((res) => setEmployees(res.data?.content || []));
   }, [isStaff]);
 
-  const loadPending = useCallback(() => {
+  const loadAdminResults = useCallback(() => {
     if (!isStaff) return;
-    getPendingLeaves()
-      .then((res) => setPending(res.data || []))
-      .catch((err) => setError(err.message));
-  }, [isStaff]);
+    setAdminLoading(true);
+    searchLeaves({ ...adminFilters, page: adminPage, size: 10 })
+      .then((res) => setAdminResults(res.data))
+      .catch((err) => setError(err.message))
+      .finally(() => setAdminLoading(false));
+  }, [isStaff, adminFilters, adminPage]);
 
   const loadMyLeaves = useCallback(() => {
     setLoading(true);
-    getMyLeaves({ status: myStatus, page: myPage, size: 10 })
+    getMyLeaves({ ...myFilters, page: myPage, size: 10 })
       .then((res) => setMyLeaves(res.data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [myStatus, myPage]);
+  }, [myFilters, myPage]);
 
-  useEffect(() => { loadPending(); }, [loadPending]);
+  useEffect(() => { loadAdminResults(); }, [loadAdminResults]);
   useEffect(() => { loadMyLeaves(); }, [loadMyLeaves]);
+
+  function handleAdminFiltersChange(next) {
+    setAdminPage(0);
+    setAdminFilters(next);
+  }
+
+  function handleMyFiltersChange(next) {
+    setMyPage(0);
+    setMyFilters(next);
+  }
 
   async function handleApply(e) {
     e.preventDefault();
@@ -70,11 +127,35 @@ export default function Leaves() {
       await applyLeave(dto);
       setSuccess('Leave application submitted');
       setForm({ employeeId: '', leaveType: 'CASUAL', startDate: '', endDate: '', reason: '' });
-      loadPending();
+      loadAdminResults();
       setMyPage(0);
       loadMyLeaves();
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  async function handleAdminExport() {
+    setError('');
+    setAdminExporting(true);
+    try {
+      await exportLeaves(adminFilters);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAdminExporting(false);
+    }
+  }
+
+  async function handleMyExport() {
+    setError('');
+    setMyExporting(true);
+    try {
+      await exportMyLeaves(myFilters);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setMyExporting(false);
     }
   }
 
@@ -84,7 +165,7 @@ export default function Leaves() {
       if (action === 'approve') await approveLeave(id);
       else await rejectLeave(id);
       setSuccess(`Leave ${action}d`);
-      loadPending();
+      loadAdminResults();
     } catch (err) {
       setError(err.message);
     }
@@ -133,61 +214,107 @@ export default function Leaves() {
 
         {isStaff ? (
           <div className="card-panel">
-            <h2>Pending Approvals</h2>
-            <table className="data-table">
-              <thead>
-                <tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Reason</th><th></th></tr>
-              </thead>
-              <tbody>
-                {pending.length ? pending.map((l) => (
-                  <tr key={l.id}>
-                    <td>{l.employeeName}</td>
-                    <td>{l.leaveType}</td>
-                    <td>{l.startDate}</td>
-                    <td>{l.endDate}</td>
-                    <td>{l.reason}</td>
-                    <td className="row-actions">
-                      <button className="btn btn-link" onClick={() => handleDecision(l.id, 'approve')}>Approve</button>
-                      <button className="btn btn-link btn-danger" onClick={() => handleDecision(l.id, 'reject')}>Reject</button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan={6} className="empty-row">No pending leaves</td></tr>
-                )}
-              </tbody>
-            </table>
+            <div className="panel-header">
+              <h2>Leave Requests</h2>
+              <button type="button" className="btn btn-excel" onClick={handleAdminExport} disabled={adminExporting}>
+                <ExcelIcon />
+                {adminExporting ? 'Exporting…' : 'Export to Excel'}
+              </button>
+            </div>
+
+            <FilterBar filters={adminFilters} onChange={handleAdminFiltersChange} onClear={() => handleAdminFiltersChange(EMPTY_FILTERS)}>
+              <label>
+                Employee
+                <input
+                  type="text"
+                  list="leave-employee-suggestions"
+                  placeholder="Any employee"
+                  value={adminFilters.employeeName}
+                  onChange={(e) => handleAdminFiltersChange({ ...adminFilters, employeeName: e.target.value })}
+                />
+                <datalist id="leave-employee-suggestions">
+                  {employees.map((e) => (
+                    <option key={e.id} value={`${e.firstName} ${e.lastName}`} />
+                  ))}
+                </datalist>
+              </label>
+            </FilterBar>
+
+            {adminLoading ? <Loading /> : adminResults && (
+              <>
+                <div className="data-table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                      {adminResults.content?.length ? adminResults.content.map((l) => (
+                        <tr key={l.id}>
+                          <td>{l.employeeName}</td>
+                          <td>{l.leaveType}</td>
+                          <td>{l.startDate}</td>
+                          <td>{l.endDate}</td>
+                          <td>{l.reason}</td>
+                          <td><StatusBadge status={l.status} /></td>
+                          <td className="row-actions">
+                            {l.status === 'PENDING' && (
+                              <>
+                                <button className="btn btn-link" onClick={() => handleDecision(l.id, 'approve')}>Approve</button>
+                                <button className="btn btn-link btn-danger" onClick={() => handleDecision(l.id, 'reject')}>Reject</button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan={7} className="empty-row">No leave records found for these filters</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  pageNumber={adminResults.pageNumber}
+                  totalPages={adminResults.totalPages}
+                  first={adminResults.first}
+                  last={adminResults.last}
+                  onChange={setAdminPage}
+                />
+              </>
+            )}
           </div>
         ) : (
           <div className="card-panel">
-            <h2>My Leave History</h2>
-            <label>
-              Status
-              <select value={myStatus} onChange={(e) => { setMyPage(0); setMyStatus(e.target.value); }}>
-                <option value="">All</option>
-                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </label>
+            <div className="panel-header">
+              <h2>My Leave History</h2>
+              <button type="button" className="btn btn-excel" onClick={handleMyExport} disabled={myExporting}>
+                <ExcelIcon />
+                {myExporting ? 'Exporting…' : 'Export to Excel'}
+              </button>
+            </div>
+
+            <FilterBar filters={myFilters} onChange={handleMyFiltersChange} onClear={() => handleMyFiltersChange(EMPTY_FILTERS)} />
 
             {loading ? <Loading /> : myLeaves && (
               <>
-                <table className="data-table">
-                  <thead>
-                    <tr><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    {myLeaves.content?.length ? myLeaves.content.map((l) => (
-                      <tr key={l.id}>
-                        <td>{l.leaveType}</td>
-                        <td>{l.startDate}</td>
-                        <td>{l.endDate}</td>
-                        <td>{l.reason}</td>
-                        <td><StatusBadge status={l.status} /></td>
-                      </tr>
-                    )) : (
-                      <tr><td colSpan={5} className="empty-row">No leaves found</td></tr>
-                    )}
-                  </tbody>
-                </table>
+                <div className="data-table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {myLeaves.content?.length ? myLeaves.content.map((l) => (
+                        <tr key={l.id}>
+                          <td>{l.leaveType}</td>
+                          <td>{l.startDate}</td>
+                          <td>{l.endDate}</td>
+                          <td>{l.reason}</td>
+                          <td><StatusBadge status={l.status} /></td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan={5} className="empty-row">No leaves found for these filters</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
                 <Pagination
                   pageNumber={myLeaves.pageNumber}
                   totalPages={myLeaves.totalPages}

@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../api/departments';
+import { getEmployees } from '../api/employees';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
 import { useAuth } from '../context/AuthContext';
 
-const emptyForm = { name: '', code: '', description: '', active: true };
+const emptyForm = { name: '', code: '', description: '', active: true, headOfDepartmentId: '' };
 
 export default function Departments() {
   const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,6 +26,9 @@ export default function Departments() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    getEmployees({ page: 0, size: 200 }).then((res) => setEmployees(res.data?.content || [])).catch(() => { /* HOD dropdown just won't populate */ });
+  }, []);
 
   function openNew() {
     setForm(emptyForm);
@@ -31,7 +36,13 @@ export default function Departments() {
   }
 
   function openEdit(dept) {
-    setForm({ name: dept.name, code: dept.code, description: dept.description || '', active: dept.active });
+    setForm({
+      name: dept.name,
+      code: dept.code,
+      description: dept.description || '',
+      active: dept.active,
+      headOfDepartmentId: dept.headOfDepartmentId || '',
+    });
     setEditing(dept);
   }
 
@@ -39,11 +50,12 @@ export default function Departments() {
     e.preventDefault();
     setError('');
     try {
+      const dto = { ...form, headOfDepartmentId: form.headOfDepartmentId ? Number(form.headOfDepartmentId) : null };
       if (editing.id) {
-        await updateDepartment(editing.id, form);
+        await updateDepartment(editing.id, dto);
         setSuccess('Department updated');
       } else {
-        await createDepartment(form);
+        await createDepartment(dto);
         setSuccess('Department created');
       }
       setEditing(null);
@@ -82,6 +94,7 @@ export default function Departments() {
               <th>Name</th>
               <th>Description</th>
               <th>Employees</th>
+              <th>Head of Department</th>
               <th>Active</th>
               {canWrite && <th></th>}
             </tr>
@@ -93,6 +106,7 @@ export default function Departments() {
                 <td>{d.name}</td>
                 <td>{d.description}</td>
                 <td>{d.employeeCount ?? 0}</td>
+                <td>{d.headOfDepartmentName || '—'}</td>
                 <td>{d.active ? 'Yes' : 'No'}</td>
                 {canWrite && (
                   <td className="row-actions">
@@ -104,7 +118,7 @@ export default function Departments() {
                 )}
               </tr>
             )) : (
-              <tr><td colSpan={6} className="empty-row">No departments found</td></tr>
+              <tr><td colSpan={7} className="empty-row">No departments found</td></tr>
             )}
           </tbody>
         </table>
@@ -130,6 +144,13 @@ export default function Departments() {
               <label className="checkbox-label">
                 <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
                 Active
+              </label>
+              <label>
+                Head of Department
+                <select value={form.headOfDepartmentId} onChange={(e) => setForm({ ...form, headOfDepartmentId: e.target.value })}>
+                  <option value="">None set</option>
+                  {employees.map((e) => <option key={e.id} value={e.id}>{e.firstName} {e.lastName} ({e.employeeCode})</option>)}
+                </select>
               </label>
             </div>
             <div className="modal-actions">

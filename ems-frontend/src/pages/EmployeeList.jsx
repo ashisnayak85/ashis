@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../api/employees';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, exportEmployees } from '../api/employees';
 import { uploadFile, QUALIFICATION_CERT_ENTITY_TYPE } from '../api/files';
 import Pagination from '../components/Pagination';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
+import ExcelIcon from '../components/ExcelIcon';
 
 export default function EmployeeList() {
   const [data, setData] = useState(null);
@@ -14,6 +15,7 @@ export default function EmployeeList() {
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -53,6 +55,18 @@ export default function EmployeeList() {
     load();
   }
 
+  async function handleExport() {
+    setError('');
+    setExporting(true);
+    try {
+      await exportEmployees({ search });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleDelete(id) {
     try {
       await deleteEmployee(id);
@@ -68,7 +82,13 @@ export default function EmployeeList() {
     <div>
       <div className="page-header">
         <h1>Employees</h1>
-        <button className="btn btn-primary" onClick={() => setEditing({})}>+ New Employee</button>
+        <div className="header-actions">
+          <button type="button" className="btn btn-excel" onClick={handleExport} disabled={exporting}>
+            <ExcelIcon />
+            {exporting ? 'Exporting…' : 'Export to Excel'}
+          </button>
+          <button className="btn btn-primary" onClick={() => setEditing({})}>+ New Employee</button>
+        </div>
       </div>
 
       <ErrorBanner message={error} />

@@ -27,4 +27,11 @@ public interface EmployeeService {
     PageResponse<EmployeeDTO> getAllEmployees(Pageable pageable);
 
     PageResponse<EmployeeDTO> searchAllEmployees(String keyword, Pageable pageable);
+
+    // Same filter as getAll/search (active employees only), but returns the full
+    // matching set as a ready-to-download .xlsx instead of a page of DTOs.
+    byte[] exportEmployees(String keyword);
+
+    // Same filter as getAllEmployees/searchAllEmployees (every row, active or not).
+    byte[] exportAllEmployees(String keyword);
 }

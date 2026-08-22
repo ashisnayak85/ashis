@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getEmployees } from '../api/employees';
 import {
-  markAttendance, punchIn, punchOut, getMyTodayStatus, searchAttendance,
+  markAttendance, updateAttendance, punchIn, punchOut, getMyTodayStatus, searchAttendance,
+  exportAttendance,
   getFaceStatus, enrollFace,
   getAdminFaceStatus, adminEnrollFace, adminTestVerifyFace, getFaceHistory,
 } from '../api/attendance';
@@ -9,6 +10,7 @@ import Pagination from '../components/Pagination';
 import FaceCapture from '../components/FaceCapture';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
 import { useAuth } from '../context/AuthContext';
+import ExcelIcon from '../components/ExcelIcon';
 
 const STATUS_OPTIONS = ['PRESENT', 'ABSENT', 'HALF_DAY', 'ON_LEAVE'];
 const SOURCE_LABEL = { SELF: 'Self', ADMIN: 'Admin', BIOMETRIC: 'Biometric' };
@@ -33,6 +35,7 @@ export default function Attendance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // --- Admin/Manager: mark attendance for anyone, any date ---
   const [form, setForm] = useState({
@@ -109,6 +112,18 @@ export default function Attendance() {
 
   const filtersActive = Object.values(filters).some(Boolean);
 
+  async function handleExport() {
+    setError('');
+    setExporting(true);
+    try {
+      await exportAttendance(filters);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleMark(e) {
     e.preventDefault();
     setError('');
@@ -124,6 +139,48 @@ export default function Attendance() {
       loadRecords();
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  // --- Admin/Manager: correcting an EXISTING record (any date) ---
+  // Separate from the form above: this only ever edits a row that already
+  // exists, never creates a new one - the sanctioned way to fix a past
+  // mistake now that "Mark Attendance" is locked to today only.
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [editForm, setEditForm] = useState({ status: 'PRESENT', checkInTime: '', checkOutTime: '', remarks: '' });
+  const [editSaving, setEditSaving] = useState(false);
+
+  function openEdit(record) {
+    setEditingRecord(record);
+    setEditForm({
+      status: record.status,
+      checkInTime: record.checkInTime || '',
+      checkOutTime: record.checkOutTime || '',
+      remarks: record.remarks || '',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingRecord(null);
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    setError('');
+    setEditSaving(true);
+    try {
+      await updateAttendance(editingRecord.id, {
+        ...editForm,
+        checkInTime: editForm.checkInTime || null,
+        checkOutTime: editForm.checkOutTime || null,
+      });
+      setSuccess(`Attendance corrected for ${editingRecord.employeeName} on ${editingRecord.attendanceDate}`);
+      setEditingRecord(null);
+      loadRecords();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -290,7 +347,10 @@ export default function Attendance() {
             </label>
             <label>
               Date
-              <input type="date" value={form.attendanceDate} onChange={(e) => setForm({ ...form, attendanceDate: e.target.value })} required />
+              {/* Admin can only mark a NEW attendance record for today - the
+                  backend enforces this too. Past-date fixes go through Edit
+                  on an existing row in the table instead. */}
+              <input type="date" value={todayStr()} disabled />
             </label>
             <label>
               Check In
@@ -385,7 +445,13 @@ export default function Attendance() {
         )}
 
         <div className="card-panel">
-          <h2>{isStaff ? 'View Attendance' : 'My Attendance History'}</h2>
+          <div className="panel-header">
+            <h2>{isStaff ? 'View Attendance' : 'My Attendance History'}</h2>
+            <button type="button" className="btn btn-excel" onClick={handleExport} disabled={exporting}>
+              <ExcelIcon />
+              {exporting ? 'Exporting…' : 'Export to Excel'}
+            </button>
+          </div>
 
           <div className="form-grid">
             {isStaff && (
@@ -430,6 +496,38 @@ export default function Attendance() {
             <button type="button" className="btn btn-link" onClick={clearFilters}>Clear filters (show all)</button>
           )}
 
+          {isStaff && editingRecord && (
+            <form className="card-form edit-attendance-form" onSubmit={saveEdit}>
+              <h3>Correct attendance — {editingRecord.employeeName} on {editingRecord.attendanceDate}</h3>
+              <div className="form-grid">
+                <label>
+                  Status
+                  <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Check In
+                  <input type="time" value={editForm.checkInTime} onChange={(e) => setEditForm({ ...editForm, checkInTime: e.target.value })} />
+                </label>
+                <label>
+                  Check Out
+                  <input type="time" value={editForm.checkOutTime} onChange={(e) => setEditForm({ ...editForm, checkOutTime: e.target.value })} />
+                </label>
+                <label className="span-2">
+                  Remarks
+                  <input value={editForm.remarks} onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })} placeholder="Reason for this correction" />
+                </label>
+              </div>
+              <div className="row-actions">
+                <button className="btn btn-primary" type="submit" disabled={editSaving}>
+                  {editSaving ? 'Saving…' : 'Save correction'}
+                </button>
+                <button type="button" className="btn btn-link" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
+              </div>
+            </form>
+          )}
+
           {loading && <Loading />}
 
           {!loading && records && (
@@ -439,6 +537,7 @@ export default function Attendance() {
                   <tr>
                     {isStaff && <th>Employee</th>}
                     <th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Source</th><th>Remarks</th>
+                    {isStaff && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -454,9 +553,14 @@ export default function Attendance() {
                         {r.faceVerified && <span className="badge badge-success face-status-badge">✓ Face</span>}
                       </td>
                       <td>{r.remarks}</td>
+                      {isStaff && (
+                        <td>
+                          <button type="button" className="btn btn-link" onClick={() => openEdit(r)}>Edit</button>
+                        </td>
+                      )}
                     </tr>
                   )) : (
-                    <tr><td colSpan={isStaff ? 7 : 6} className="empty-row">No records</td></tr>
+                    <tr><td colSpan={isStaff ? 8 : 6} className="empty-row">No records</td></tr>
                   )}
                 </tbody>
               </table>

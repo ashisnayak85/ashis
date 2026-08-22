@@ -23,6 +23,7 @@ body {
 .navbar-brand { font-weight: 700; font-size: 1.1rem; }
 .navbar-spacer { flex: 1; }
 .navbar-user { position: relative; display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+.navbar-username { color: #e2e8f0; font-weight: 600; font-size: 0.88rem; }
 
 /* ---------- Sidebar toggle (hamburger) ---------- */
 .sidebar-toggle {
@@ -187,6 +188,21 @@ body {
 .btn-danger { color: #dc2626; }
 .btn.btn-danger { background: #dc2626; color: white; }
 .btn.btn-success { background: #02cd31; color: white; }
+.btn-secondary { background: white; color: #334155; border: 1px solid #d1d5db; }
+.btn-secondary:hover { background: #f8fafc; }
+.btn-secondary:disabled { color: #94a3b8; cursor: not-allowed; }
+
+/* Export-to-Excel action - Excel's own green, so the button reads as "download
+   a spreadsheet" at a glance. Kept distinct from .btn-success (used for
+   approve/positive actions elsewhere) so the two don't get visually confused. */
+.btn-excel { background: #1d6f42; color: white; display: inline-flex; align-items: center; gap: 6px; }
+.btn-excel:hover { background: #16572f; }
+.btn-excel:disabled { background: #86ab9b; cursor: not-allowed; }
+.btn-excel svg { flex-shrink: 0; }
+
+/* Groups multiple action buttons together on the right side of a page-header
+   or panel-header (e.g. "Export to Excel" next to "+ New Employee"). */
+.header-actions { display: flex; gap: 8px; align-items: center; }
 
 /* ---------- Page header ---------- */
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -215,8 +231,14 @@ body {
 .modal-card { background: white; border-radius: 10px; padding: 24px; width: 680px; max-width: 92vw; max-height: 88vh; overflow-y: auto; }
 .modal-card-small { width: 380px; }
 .modal-card-wide { width: 880px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-top: 12px; }
+/* minmax(0, 1fr) instead of a bare 1fr - a bare 1fr track refuses to shrink
+   below its content's min-content width (effectively minmax(auto, 1fr)),
+   which lets a wide <select> (e.g. "Escalation contact") force the track -
+   and the whole form - wider than its container and overflow into whatever
+   sits next to it. minmax(0, 1fr) lets the track compress properly instead. */
+.form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 16px; margin-top: 12px; }
 .form-grid .span-2 { grid-column: span 2; }
+.edit-attendance-form { margin: 12px 0; border: 1px solid #cbd5e1; }
 
 /* Field-level validation - pairs with EmployeeFormModal's fieldErrors map */
 input.input-error, select.input-error {
@@ -253,12 +275,33 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .two-col { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
 .card-form, .card-panel { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 12px; }
 
+/* Panel title + action button (e.g. "Leave Requests" + "Export to Excel") */
+.panel-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.panel-header h2 { margin: 0; }
+
+/* ---------- Filter bar (leave search: status/date-range/employee) ---------- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding-bottom: 4px;
+}
+.filter-bar label { flex: 1 1 130px; min-width: 130px; }
+.filter-bar input, .filter-bar select { width: 100%; }
+.filter-clear { flex: 0 0 auto; white-space: nowrap; padding-bottom: 8px; }
+
+/* Table wrapper for horizontal scroll on narrow viewports without affecting
+   the rest of the card-panel layout. */
+.data-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
 /* ---------- Badges / banners ---------- */
 .badge { padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
 .badge-success { background: #dcfce7; color: #166534; }
 .badge-muted { background: #f1f5f9; color: #64748b; }
 .badge-warning { background: #fef3c7; color: #92400e; }
 .badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-info { background: #dbeafe; color: #1e40af; }
 
 .banner { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; }
 .banner-error { background: #fee2e2; color: #991b1b; }
@@ -273,6 +316,8 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .auth-card { background: white; padding: 32px; border-radius: 12px; width: 360px; max-width: 90vw; box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 14px; }
 .auth-card h1 { font-size: 1.3rem; margin: 0; }
 .auth-subtitle { color: #64748b; margin: 0 0 4px 0; font-size: 0.9rem; }
+.auth-secondary-link { text-align: center; font-size: 0.85rem; color: #2563eb; text-decoration: none; }
+.auth-secondary-link:hover { text-decoration: underline; }
 
 /* ---------- Face capture (self-attendance verification) ---------- */
 .face-capture { display: flex; flex-direction: column; gap: 10px; }
@@ -289,3 +334,181 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .face-capture-mirrored { transform: scaleX(-1); }
 .face-capture-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .face-status-badge { font-size: 0.8rem; margin-left: 8px; }
+
+/* =====================================================================
+   Responsive layout
+   Breakpoints: >900px desktop/tablet-landscape, 601-900px tablet/small
+   laptop, <=600px phones.
+   ===================================================================== */
+
+/* Sidebar overlay backdrop shown only while the mobile drawer is open */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 39; /* just below the sidebar (z-index 40) */
+}
+
+@media (min-width: 901px) {
+  /* Never show the mobile drawer chrome on desktop, even if state is stale */
+  .sidebar-overlay { display: none; }
+}
+
+/* ---------- Tablet & below ---------- */
+@media (max-width: 900px) {
+  .navbar { padding: 0 12px; gap: 12px; }
+  .navbar-brand { font-size: 1rem; }
+  .page-content { padding: 16px; }
+
+  /* Sidebar becomes an off-canvas drawer instead of a hover-expand rail */
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    width: 220px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 40;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+  .sidebar:hover { width: 220px; } /* no hover-expand behaviour on touch */
+  .sidebar-link-label { opacity: 1; } /* labels always visible in the drawer */
+  .sidebar.sidebar-mobile-open { transform: translateX(0); }
+
+  .two-col { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span-2 { grid-column: span 1; }
+
+  .modal-card { width: 92vw; padding: 18px; }
+  .modal-card-wide { width: 92vw; }
+
+  /* Tables scroll horizontally (inside .data-table-scroll where present)
+     rather than squashing columns unreadably */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .data-table th, .data-table td { padding: 8px 10px; }
+  /* Table already scrolls itself via display:block above; the wrapper just
+     needs to stop clipping it and let the inner scroll do the work. */
+  .data-table-scroll .data-table { min-width: 640px; }
+
+  .filter-bar { gap: 10px; }
+  .filter-bar label { flex: 1 1 45%; min-width: 140px; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .navbar { height: 52px; gap: 8px; }
+  .navbar-username { display: none; } /* avatar + popup still show identity */
+  .sidebar { top: 52px; }
+
+  .page-header { flex-direction: column; align-items: stretch; gap: 10px; }
+  .page-header h1 { font-size: 1.2rem; }
+  .page-header .btn { width: 100%; }
+  .header-actions { flex-direction: column; align-items: stretch; }
+
+  .panel-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .panel-header .btn { width: 100%; }
+
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 1.5rem; }
+
+  .modal-backdrop { padding: 12px; align-items: flex-end; }
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; }
+
+  .row-actions { flex-direction: column; gap: 4px; align-items: flex-start; }
+
+  .pagination { flex-wrap: wrap; justify-content: center; }
+
+  /* Filter bar stacks to one control per row on phones; "Clear filters"
+     becomes a full-width tap target instead of a small inline link. */
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-bar label { flex: 1 1 auto; min-width: 0; }
+  .filter-clear { padding-bottom: 0; align-self: flex-start; }
+
+  .auth-card { padding: 22px; width: 100%; }
+  .profile-popup { width: min(280px, 90vw); right: -8px; }
+
+  .face-capture-frame { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+}
+
+/* ---------- Tickets ---------- */
+
+/* Small red dot next to a ticket row/title with unseen conversation activity. */
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  margin-left: 6px;
+}
+
+/* Banner shown on the ticket detail page when an SLA clock has been breached. */
+.sla-breach-banner {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.ticket-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: #64748b; font-size: 0.9rem; margin: 6px 0 16px; }
+.ticket-meta strong { color: #334155; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+.plain-list { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
+.plain-list li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+
+.ticket-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+/* Unified conversation timeline - plain replies and status-change events
+   (claim/resolve/reject/transfer/escalate/accept/close/SLA breach) all
+   render in one scrolling thread, chat-app style. */
+.conversation-thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+.conversation-entry-reply {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  max-width: 80%;
+}
+.conversation-entry-reply.mine { align-self: flex-end; background: #eff6ff; border-color: #bfdbfe; }
+
+.conversation-entry-system {
+  align-self: center;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  text-align: center;
+  max-width: 90%;
+}
+.conversation-entry-system.entry-reject,
+.conversation-entry-system.entry-sla_breach { background: #fee2e2; color: #991b1b; }
+.conversation-entry-system.entry-resolve,
+.conversation-entry-system.entry-accept { background: #dcfce7; color: #166534; }
+.conversation-entry-system.entry-escalate { background: #fef3c7; color: #92400e; }
+
+.conversation-entry-author { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
+.conversation-entry-time { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
+
+.reply-box { display: flex; gap: 8px; align-items: flex-start; }
+.reply-box textarea { flex: 1; }

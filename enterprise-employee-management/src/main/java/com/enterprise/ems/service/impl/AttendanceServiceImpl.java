@@ -228,6 +228,31 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    // Same filter/scoping as search() above, but the full matching set (unpaged)
+    // rendered straight to .xlsx via the shared export util.
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportAttendance(Long employeeId, LocalDate startDate, LocalDate endDate, String status) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new BusinessException("Start date must be on or before end date");
+        }
+
+        List<Attendance> records = attendanceRepository.findAll(
+                AttendanceSpecifications.filterBy(employeeId, startDate, endDate, status),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "attendanceDate"));
+
+        List<String> headers = List.of("Employee", "Date", "Check In", "Check Out", "Status", "Source", "Remarks");
+
+        return com.enterprise.ems.util.ExcelExportUtil.toXlsx("Attendance", headers, records, r -> List.of(
+                r.getEmployee().getFullName(),
+                r.getAttendanceDate(),
+                r.getCheckInTime() != null ? r.getCheckInTime().toString() : "",
+                r.getCheckOutTime() != null ? r.getCheckOutTime().toString() : "",
+                r.getStatus(),
+                r.getSource(),
+                r.getRemarks() != null ? r.getRemarks() : ""));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<AttendanceDTO> getByDate(LocalDate date) {

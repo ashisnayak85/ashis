@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ErrorBanner } from '../components/Feedback';
+import { ErrorBanner, SuccessBanner } from '../components/Feedback';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -37,6 +37,9 @@ export default function Login() {
         <h1>Employee Management System</h1>
         <p className="auth-subtitle">Sign in to continue</p>
         <ErrorBanner message={error} />
+        {location.state?.resetSuccess && (
+          <SuccessBanner message="Password reset successfully. Please sign in with your new password." />
+        )}
         <label>
           Username
           <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
@@ -48,6 +51,7 @@ export default function Login() {
         <button className="btn btn-primary" type="submit" disabled={submitting}>
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
+        <NavLink to="/forgot-password" className="auth-secondary-link">Forgot password?</NavLink>
       </form>
     </div>
   );

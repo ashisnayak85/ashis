@@ -45,4 +45,19 @@ public class AllEmployeeApiController {
 
         return ResponseEntity.ok(ApiResponse.success(result));
     }
+
+    // Same "search" filter as getAll above, but returns every matching row
+    // (active or not) as a downloadable .xlsx instead of a paginated JSON page.
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> export(@RequestParam(required = false) String search) {
+        byte[] xlsx = employeeService.exportAllEmployees(search);
+        String filename = "all-employees-" + java.time.LocalDate.now() + ".xlsx";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(xlsx);
+    }
 }

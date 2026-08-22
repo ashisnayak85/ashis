@@ -1,8 +1,15 @@
 import api from './client';
+import { downloadBlob, todayStamp } from './download';
 
 // Admin/Manager marking or correcting attendance for any employee, any date.
 export function markAttendance(dto) {
   return api.post('/api/attendance', dto);
+}
+
+// Correcting an EXISTING record (past mistake) - separate from markAttendance,
+// which only ever creates a NEW record and only for today.
+export function updateAttendance(id, dto) {
+  return api.put(`/api/attendance/${id}`, dto);
 }
 
 // Employee self-service: punch in / punch out for today, server clock only.
@@ -92,4 +99,17 @@ export function searchAttendance({ employeeId, startDate, endDate, status, page 
   if (endDate) params.endDate = endDate;
   if (status) params.status = status;
   return api.get('/api/attendance/search', { params });
+}
+
+// Same filters as searchAttendance, minus pagination - exports the full
+// filtered result set as .xlsx. Same self-scoping as /search: a plain
+// employee always gets their own records regardless of employeeId passed.
+export async function exportAttendance({ employeeId, startDate, endDate, status } = {}) {
+  const params = {};
+  if (employeeId) params.employeeId = employeeId;
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
+  if (status) params.status = status;
+  const blob = await api.get('/api/attendance/export', { params, responseType: 'blob' });
+  downloadBlob(blob, `attendance-${todayStamp()}.xlsx`);
 }

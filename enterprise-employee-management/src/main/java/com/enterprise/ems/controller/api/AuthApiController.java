@@ -67,10 +67,43 @@ public class AuthApiController {
         return ResponseEntity.ok(ApiResponse.success("Password updated successfully", null));
     }
 
+    // Public, unauthenticated - this is exactly for users who are locked out and
+    // can't log in. Always returns the same success message whether or not the
+    // username/email actually matched an account (see UserServiceImpl for why).
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        userService.initiatePasswordReset(req.getUsernameOrEmail());
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account matches that username/email, a password reset link has been sent.", null));
+    }
+
+    // Public, unauthenticated - reached from the link inside the reset email.
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        userService.resetPassword(req.getToken(), req.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully. Please log in.", null));
+    }
+
     @Data
     static class ChangePasswordRequest {
         @NotBlank(message = "Current password is required")
         private String currentPassword;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 6, message = "New password must be at least 6 characters")
+        private String newPassword;
+    }
+
+    @Data
+    static class ForgotPasswordRequest {
+        @NotBlank(message = "Username or email is required")
+        private String usernameOrEmail;
+    }
+
+    @Data
+    static class ResetPasswordRequest {
+        @NotBlank(message = "Reset token is required")
+        private String token;
 
         @NotBlank(message = "New password is required")
         @Size(min = 6, message = "New password must be at least 6 characters")

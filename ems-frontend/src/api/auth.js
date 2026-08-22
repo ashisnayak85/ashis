@@ -23,3 +23,12 @@ export function me() {
 export function changePassword(currentPassword, newPassword) {
   return api.post('/api/auth/change-password', { currentPassword, newPassword });
 }
+
+// Forgot-password flow - both public, no login required.
+export function forgotPassword(usernameOrEmail) {
+  return api.post('/api/auth/forgot-password', { usernameOrEmail });
+}
+
+export function resetPassword(token, newPassword) {
+  return api.post('/api/auth/reset-password', { token, newPassword });
+}

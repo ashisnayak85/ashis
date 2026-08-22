@@ -36,7 +36,12 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (departmentRepository.existsByCode(dto.getCode())) {
             throw new DuplicateResourceException("Department code already exists");
         }
-        Department saved = departmentRepository.save(departmentMapper.toEntity(dto));
+        Department toSave = departmentMapper.toEntity(dto);
+        if (dto.getHeadOfDepartmentId() != null) {
+            toSave.setHeadOfDepartment(employeeRepository.findById(dto.getHeadOfDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + dto.getHeadOfDepartmentId())));
+        }
+        Department saved = departmentRepository.save(toSave);
         auditService.log("CREATE", "Department", saved.getId(), "Created department: " + saved.getName());
         return departmentMapper.toDTO(saved, 0);
     }
@@ -50,6 +55,12 @@ public class DepartmentServiceImpl implements DepartmentService {
         dept.setCode(dto.getCode());
         dept.setDescription(dto.getDescription());
         if (dto.getActive() != null) dept.setActive(dto.getActive());
+        if (dto.getHeadOfDepartmentId() != null) {
+            dept.setHeadOfDepartment(employeeRepository.findById(dto.getHeadOfDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + dto.getHeadOfDepartmentId())));
+        } else {
+            dept.setHeadOfDepartment(null);
+        }
         Department updated = departmentRepository.save(dept);
         long count = employeeRepository.countByDepartmentId(id);
         return departmentMapper.toDTO(updated, count);

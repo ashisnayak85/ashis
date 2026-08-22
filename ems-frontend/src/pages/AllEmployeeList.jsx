@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getAllEmployees, updateEmployee } from '../api/employees';
+import { getAllEmployees, updateEmployee, exportAllEmployees } from '../api/employees';
 import Pagination from '../components/Pagination';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
+import ExcelIcon from '../components/ExcelIcon';
 
 export default function AllEmployeeList() {
   const [data, setData] = useState(null);
@@ -12,6 +13,7 @@ export default function AllEmployeeList() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -32,10 +34,26 @@ export default function AllEmployeeList() {
     load();
   }
 
+  async function handleExport() {
+    setError('');
+    setExporting(true);
+    try {
+      await exportAllEmployees({ search });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
         <h1>All Employees</h1>
+        <button type="button" className="btn btn-excel" onClick={handleExport} disabled={exporting}>
+          <ExcelIcon />
+          {exporting ? 'Exporting…' : 'Export to Excel'}
+        </button>
       </div>
 
       <ErrorBanner message={error} />

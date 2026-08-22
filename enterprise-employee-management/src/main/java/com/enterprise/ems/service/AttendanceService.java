@@ -46,6 +46,10 @@ public interface AttendanceService {
     // and match - date range only, employee only, status only, or all together.
     PageResponse<AttendanceDTO> search(Long employeeId, LocalDate startDate, LocalDate endDate, String status, Pageable pageable);
 
+    // Same filter as search() above, but returns every matching row (unpaged)
+    // as a ready-to-download .xlsx instead of a page of DTOs.
+    byte[] exportAttendance(Long employeeId, LocalDate startDate, LocalDate endDate, String status);
+
     List<AttendanceDTO> getByDate(LocalDate date);
 
     long countPresentToday();

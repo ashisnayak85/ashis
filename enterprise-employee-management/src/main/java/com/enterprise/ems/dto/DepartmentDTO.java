@@ -26,4 +26,9 @@ public class DepartmentDTO {
     private Boolean active;
 
     private Long employeeCount;
+
+    // Head of Department - who tickets for this department ultimately
+    // escalate to. Nullable (see Department entity's comment).
+    private Long headOfDepartmentId;
+    private String headOfDepartmentName;
 }

@@ -4,12 +4,14 @@ import com.enterprise.ems.entity.LeaveMaster;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface LeaveRepository extends JpaRepository<LeaveMaster, Long> {
+public interface LeaveRepository extends JpaRepository<LeaveMaster, Long>,
+        JpaSpecificationExecutor<LeaveMaster> {
 
     Page<LeaveMaster> findByEmployeeId(Long employeeId, Pageable pageable);
 

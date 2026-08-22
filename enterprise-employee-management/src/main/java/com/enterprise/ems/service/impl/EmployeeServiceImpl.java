@@ -16,7 +16,9 @@ import com.enterprise.ems.repository.EmployeeRepository;
 import com.enterprise.ems.repository.LocationRepository;
 import com.enterprise.ems.service.AuditService;
 import com.enterprise.ems.service.EmployeeService;
+import com.enterprise.ems.util.ExcelExportUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -197,6 +199,54 @@ public class EmployeeServiceImpl implements EmployeeService {
     public PageResponse<EmployeeDTO> searchAllEmployees(String keyword, Pageable pageable) {
         Page<Employee> page = employeeRepository.searchAllEmployees(keyword, pageable);
         return toPageResponse(page);
+    }
+
+    // Same "active employees only" filter as getAll/search above, but the full
+    // matching set (unpaged) rendered straight to .xlsx via the shared export util.
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportEmployees(String keyword) {
+        Sort sort = Sort.by("firstName");
+        List<Employee> employees = (keyword != null && !keyword.isBlank())
+                ? employeeRepository.searchEmployees(keyword, sort)
+                : employeeRepository.findByActiveTrue(sort);
+        return toEmployeeXlsx("Employees", employees, true);
+    }
+
+    // Same "every row, active or not" filter as getAllEmployees/searchAllEmployees.
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportAllEmployees(String keyword) {
+        Sort sort = Sort.by("firstName");
+        List<Employee> employees = (keyword != null && !keyword.isBlank())
+                ? employeeRepository.searchAllEmployees(keyword, sort)
+                : employeeRepository.findAll(sort);
+        return toEmployeeXlsx("All Employees", employees, false);
+    }
+
+    // includeLocation: EmployeeList shows a Location column, AllEmployeeList
+    // doesn't - kept in sync with what each screen's table actually displays.
+    private byte[] toEmployeeXlsx(String sheetName, List<Employee> employees, boolean includeLocation) {
+        List<String> headers = includeLocation
+                ? List.of("Code", "Name", "Email", "Department", "Location", "Designation", "Active")
+                : List.of("Code", "Name", "Email", "Department", "Designation", "Status");
+
+        return ExcelExportUtil.toXlsx(sheetName, headers, employees, emp -> includeLocation
+                ? List.of(
+                        emp.getEmployeeCode(),
+                        emp.getFullName(),
+                        emp.getEmail(),
+                        emp.getDepartment() != null ? emp.getDepartment().getName() : "",
+                        emp.getLocation() != null ? emp.getLocation().getName() : "",
+                        emp.getDesignation() != null ? emp.getDesignation().getName() : "",
+                        Boolean.TRUE.equals(emp.getActive()) ? "Yes" : "No")
+                : List.of(
+                        emp.getEmployeeCode(),
+                        emp.getFullName(),
+                        emp.getEmail(),
+                        emp.getDepartment() != null ? emp.getDepartment().getName() : "",
+                        emp.getDesignation() != null ? emp.getDesignation().getName() : "",
+                        Boolean.TRUE.equals(emp.getActive()) ? "Active" : "Inactive"));
     }
 
     private PageResponse<EmployeeDTO> toPageResponse(Page<Employee> page) {

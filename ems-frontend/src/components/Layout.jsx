@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { to: '/locations', label: 'Locations', initial: 'L', roles: ['ADMIN', 'MANAGER'] },
   { to: '/attendance', label: 'Attendance', initial: 'T' },
   { to: '/leaves', label: 'Leave', initial: 'L' },
+  { to: '/tickets', label: 'Tickets', initial: 'K' },
+  { to: '/ticket-setup', label: 'Ticket Setup', initial: 'S', roles: ['ADMIN', 'MANAGER'] },
   { to: '/admin/users', label: 'Users', initial: 'U', roles: ['ADMIN'] },
 ];
 
@@ -20,12 +22,24 @@ export default function Layout() {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const popupRef = useRef(null);
 
   async function handleLogout() {
     setProfileOpen(false);
     await logout();
     navigate('/login');
+  }
+
+  function handleToggleSidebar() {
+    // On small screens the button opens/closes an off-canvas drawer instead
+    // of pinning the hover-expand rail (that behaviour only makes sense on
+    // pointer/desktop layouts).
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      setMobileNavOpen((open) => !open);
+    } else {
+      setSidebarPinned((pinned) => !pinned);
+    }
   }
 
   useEffect(() => {
@@ -35,7 +49,10 @@ export default function Layout() {
       }
     }
     function handleEscape(event) {
-      if (event.key === 'Escape') setProfileOpen(false);
+      if (event.key === 'Escape') {
+        setProfileOpen(false);
+        setMobileNavOpen(false);
+      }
     }
     if (profileOpen) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -47,15 +64,27 @@ export default function Layout() {
     };
   }, [profileOpen]);
 
+  // Close the mobile drawer automatically if the viewport is resized up to
+  // desktop width, so it doesn't stay "open" and reappear later.
+  useEffect(() => {
+    function handleResize() {
+      if (!window.matchMedia('(max-width: 900px)').matches) {
+        setMobileNavOpen(false);
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="app-shell">
       <nav className="navbar">
         <button
           type="button"
-          className={`sidebar-toggle${sidebarPinned ? ' sidebar-toggle-active' : ''}`}
-          onClick={() => setSidebarPinned((pinned) => !pinned)}
+          className={`sidebar-toggle${sidebarPinned ? ' sidebar-toggle-active' : ''}${mobileNavOpen ? ' sidebar-toggle-active' : ''}`}
+          onClick={handleToggleSidebar}
           aria-label="Toggle sidebar"
-          aria-expanded={sidebarPinned}
+          aria-expanded={sidebarPinned || mobileNavOpen}
         >
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="6" x2="21" y2="6" />
@@ -66,6 +95,7 @@ export default function Layout() {
         <div className="navbar-brand">EMS</div>
         <div className="navbar-spacer" />
         <div className="navbar-user" ref={popupRef}>
+          <span className="navbar-username">{user?.employeeName || user?.username}</span>
           <button
             type="button"
             className="profile-trigger"
@@ -116,10 +146,19 @@ export default function Layout() {
       </nav>
 
       <div className="app-body">
-        <aside className={`sidebar${sidebarPinned ? ' sidebar-pinned' : ''}`}>
+        {mobileNavOpen && (
+          <div className="sidebar-overlay" onClick={() => setMobileNavOpen(false)} />
+        )}
+        <aside className={`sidebar${sidebarPinned ? ' sidebar-pinned' : ''}${mobileNavOpen ? ' sidebar-mobile-open' : ''}`}>
           <div className="sidebar-links">
             {NAV_ITEMS.filter((item) => !item.roles || hasAnyRole(item.roles)).map((item) => (
-              <NavLink key={item.to} to={item.to} className="sidebar-link" title={item.label}>
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className="sidebar-link"
+                title={item.label}
+                onClick={() => setMobileNavOpen(false)}
+              >
                 <span className="sidebar-link-icon">{item.initial}</span>
                 <span className="sidebar-link-label">{item.label}</span>
               </NavLink>

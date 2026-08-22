@@ -46,6 +46,14 @@ public class Department {
     @Builder.Default
     private List<Employee> employees = new ArrayList<>();
 
+    // Head of Department - who a ticket ultimately escalates to if the
+    // department's escalation pool can't/doesn't resolve it. Nullable so
+    // existing departments don't break; set this before relying on ticket
+    // escalation for that department.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "head_of_department_id")
+    private Employee headOfDepartment;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

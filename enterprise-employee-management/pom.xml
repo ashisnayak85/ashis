@@ -164,6 +164,16 @@ SPRING BOOT PARENT: Manages dependency versions automatically
             <artifactId>pytorch-engine</artifactId>
             <version>${djl.version}</version>
         </dependency>
+
+        <!-- Apache POI: generates .xlsx exports (e.g. leave records). XSSFWorkbook
+             (in-memory) is fine at this app's scale; switch to SXSSFWorkbook
+             (streaming) only if a single export could realistically exceed
+             tens of thousands of rows. -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
     </dependencies>
 
     <build>

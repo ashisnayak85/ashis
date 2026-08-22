@@ -206,6 +206,30 @@ class AttendanceApiController {
         return ResponseEntity.ok(ApiResponse.success(
                 attendanceService.search(scopedEmployeeId, startDate, endDate, status, PageRequest.of(page, size))));
     }
+
+    // Same filter + self-scoping as /search above, but returns the full
+    // matching set as a downloadable .xlsx instead of a paginated JSON page.
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @RequestParam(required = false) String status,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        Long scopedEmployeeId = employeeId;
+        if (!currentEmployeeResolver.isPrivileged(principal)) {
+            scopedEmployeeId = currentEmployeeResolver.requireCurrentEmployee(principal).getId();
+        }
+        byte[] xlsx = attendanceService.exportAttendance(scopedEmployeeId, startDate, endDate, status);
+        String filename = "attendance-" + java.time.LocalDate.now() + ".xlsx";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(xlsx);
+    }
 }
 
 /*
@@ -279,6 +303,7 @@ class LeaveApiController {
 
     private final LeaveService leaveService;
     private final com.enterprise.ems.security.CurrentEmployeeResolver currentEmployeeResolver;
+    private final com.enterprise.ems.service.AuditService auditService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LeaveDTO>> apply(
@@ -315,18 +340,97 @@ class LeaveApiController {
         return ResponseEntity.ok(ApiResponse.success(leaveService.getPendingLeaves()));
     }
 
+    // Admin/manager: search across all employees' leave records.
+    // All filters optional - status, date range (overlap - see LeaveSpecifications),
+    // and employee name. Replaces the old "/pending"-only view for the main leave
+    // requests screen; "/pending" above is left in place in case anything else
+    // still depends on it.
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<PageResponse<LeaveDTO>>> search(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate from,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate to,
+            @RequestParam(required = false) String employeeName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.success(
+                leaveService.searchLeaves(status, from, to, employeeName, PageRequest.of(page, size))));
+    }
+
     // Self-service: "my leave history", optionally filtered by status
-    // (PENDING/APPROVED/REJECTED). Employee is always resolved from the session.
+    // (PENDING/APPROVED/REJECTED) and/or date range (overlap - see
+    // LeaveSpecifications). Employee is always resolved from the session -
+    // never trust an employeeId supplied by the client here.
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<PageResponse<LeaveDTO>>> getMyLeaves(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate from,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @org.springframework.security.core.annotation.AuthenticationPrincipal
             org.springframework.security.core.userdetails.UserDetails principal) {
         var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
         return ResponseEntity.ok(ApiResponse.success(
-                leaveService.getMyLeaves(employee.getId(), status, PageRequest.of(page, size))));
+                leaveService.getMyLeaves(employee.getId(), status, from, to, PageRequest.of(page, size))));
+    }
+
+    // Admin/manager: same filters as /search, but returns the full filtered
+    // result set as a downloadable .xlsx instead of a paginated JSON page.
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> exportSearch(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate from,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate to,
+            @RequestParam(required = false) String employeeName,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        byte[] xlsx = leaveService.exportLeaves(null, status, from, to, employeeName);
+        auditService.log("EXPORT", "Leave", null, "Leave records exported by: " + principal.getUsername());
+        return excelResponse(xlsx, "leave-requests");
+    }
+
+    // Self-service: export the logged-in employee's own leave history. Same
+    // status/date-range filters as /my, employee always resolved server-side.
+    @GetMapping("/my/export")
+    public ResponseEntity<byte[]> exportMyLeaves(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate from,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate to,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            org.springframework.security.core.userdetails.UserDetails principal) {
+        var employee = currentEmployeeResolver.requireCurrentEmployee(principal);
+        byte[] xlsx = leaveService.exportLeaves(employee.getId(), status, from, to, null);
+        auditService.log("EXPORT", "Leave", employee.getId(), "Own leave history exported by: " + principal.getUsername());
+        return excelResponse(xlsx, "my-leave-history");
+    }
+
+    private ResponseEntity<byte[]> excelResponse(byte[] xlsx, String filenamePrefix) {
+        String filename = filenamePrefix + "-" + java.time.LocalDate.now() + ".xlsx";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(xlsx);
     }
 }
 
