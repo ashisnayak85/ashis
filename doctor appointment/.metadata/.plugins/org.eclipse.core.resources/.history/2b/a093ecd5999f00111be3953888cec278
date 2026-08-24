@@ -1,0 +1,169 @@
+package com.doctorapp.service;
+
+import com.doctorapp.dto.*;
+import com.doctorapp.entity.ClinicAdmin;
+import com.doctorapp.entity.Doctor;
+import com.doctorapp.entity.Patient;
+import com.doctorapp.entity.Specialization;
+import com.doctorapp.entity.User;
+import com.doctorapp.exception.DuplicateResourceException;
+import com.doctorapp.repository.ClinicAdminRepository;
+import com.doctorapp.repository.DoctorRepository;
+import com.doctorapp.repository.PatientRepository;
+import com.doctorapp.repository.SpecializationRepository;
+import com.doctorapp.repository.UserRepository;
+import com.doctorapp.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final ClinicAdminRepository clinicAdminRepository;
+    private final SpecializationRepository specializationRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Transactional
+    public AuthResponse registerPatient(RegisterPatientRequest req) {
+        if (userRepository.existsByEmail(req.getEmail())) {
+            throw new DuplicateResourceException("An account with this email already exists");
+        }
+        User user = userRepository.save(User.builder()
+                .email(req.getEmail())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .role(User.Role.PATIENT)
+                .build());
+
+        Patient patient = patientRepository.save(Patient.builder()
+                .user(user)
+                .name(req.getName())
+                .phone(req.getPhone())
+                .dob(req.getDob())
+                .gender(req.getGender())
+                .build());
+
+        return buildAuthResponse(user, patient.getName());
+    }
+
+    @Transactional
+    public AuthResponse registerDoctor(RegisterDoctorRequest req) {
+        if (userRepository.existsByEmail(req.getEmail())) {
+            throw new DuplicateResourceException("An account with this email already exists");
+        }
+        User user = userRepository.save(User.builder()
+                .email(req.getEmail())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .role(User.Role.DOCTOR)
+                .build());
+
+        Set<Specialization> specializations = new HashSet<>();
+        if (req.getSpecializations() != null) {
+            for (String name : req.getSpecializations()) {
+                Specialization spec = specializationRepository.findByNameIgnoreCase(name)
+                        .orElseGet(() -> specializationRepository.save(
+                                Specialization.builder().name(name).build()));
+                specializations.add(spec);
+            }
+        }
+
+        // New doctors start unverified - an admin must verify them before they show
+        // up in public search or become bookable. See Doctor.verified.
+        Doctor doctor = doctorRepository.save(Doctor.builder()
+                .user(user)
+                .name(req.getName())
+                .qualification(req.getQualification())
+                .experienceYears(req.getExperienceYears())
+                .consultationFee(req.getConsultationFee())
+                .specializations(specializations)
+                .verified(false)
+                .active(true)
+                .build());
+
+        return buildAuthResponse(user, doctor.getName());
+    }
+
+    @Transactional
+    public AuthResponse registerClinicAdmin(RegisterClinicAdminRequest req) {
+        if (userRepository.existsByEmail(req.getEmail())) {
+            throw new DuplicateResourceException("An account with this email already exists");
+        }
+        User user = userRepository.save(User.builder()
+                .email(req.getEmail())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .role(User.Role.CLINIC_ADMIN)
+                .build());
+
+        ClinicAdmin clinicAdmin = clinicAdminRepository.save(ClinicAdmin.builder()
+                .user(user)
+                .name(req.getName())
+                .phone(req.getPhone())
+                .build());
+
+        return buildAuthResponse(user, clinicAdmin.getName());
+    }
+
+    public AuthResponse login(AuthRequest req) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
+
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new IllegalStateException("User vanished after authentication"));
+
+        return buildAuthResponse(user, resolveName(user));
+    }
+
+    public AuthResponse refresh(RefreshRequest req) {
+        if (!jwtTokenProvider.isValid(req.getRefreshToken()) || !jwtTokenProvider.isRefreshToken(req.getRefreshToken())) {
+            throw new org.springframework.security.authentication.BadCredentialsException("Invalid refresh token");
+        }
+        String email = jwtTokenProvider.getEmail(req.getRefreshToken());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new org.springframework.security.authentication.BadCredentialsException("Invalid refresh token"));
+
+        return buildAuthResponse(user, resolveName(user));
+    }
+    private Patient.Gender parseGender(String gender) {
+        if (gender == null || gender.isBlank()) {
+            return null;
+        }
+        try {
+            return Patient.Gender.valueOf(gender.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Gender must be one of MALE, FEMALE, OTHER");
+        }
+    }
+    private String resolveName(User user) {
+        return switch (user.getRole()) {
+            case PATIENT -> patientRepository.findByUserId(user.getId()).map(Patient::getName).orElse(user.getEmail());
+            case DOCTOR -> doctorRepository.findByUserId(user.getId()).map(Doctor::getName).orElse(user.getEmail());
+            case CLINIC_ADMIN -> clinicAdminRepository.findByUserId(user.getId()).map(ClinicAdmin::getName).orElse(user.getEmail());
+            case ADMIN -> user.getEmail();
+        };
+    }
+
+    private AuthResponse buildAuthResponse(User user, String name) {
+        String access = jwtTokenProvider.generateAccessToken(user.getEmail(), user.getRole().name());
+        String refresh = jwtTokenProvider.generateRefreshToken(user.getEmail(), user.getRole().name());
+        return AuthResponse.builder()
+                .accessToken(access)
+                .refreshToken(refresh)
+                .role(user.getRole().name())
+                .userId(user.getId())
+                .name(name)
+                .build();
+    }
+}

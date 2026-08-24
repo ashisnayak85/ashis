@@ -1,0 +1,10 @@
+package com.doctorapp.repository;
+
+import com.doctorapp.entity.ClinicAdmin;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface ClinicAdminRepository extends JpaRepository<ClinicAdmin, Long> {
+    Optional<ClinicAdmin> findByUserId(Long userId);
+}

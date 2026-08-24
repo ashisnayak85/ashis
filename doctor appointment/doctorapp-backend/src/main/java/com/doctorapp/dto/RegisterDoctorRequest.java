@@ -1,0 +1,32 @@
+package com.doctorapp.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Getter
+@Setter
+public class RegisterDoctorRequest {
+    @NotBlank @Email
+    private String email;
+
+    @NotBlank
+    private String password;
+
+    @NotBlank
+    private String name;
+
+    private String qualification;
+    private Integer experienceYears;
+    private BigDecimal consultationFee;
+    private List<String> specializations;
+    private LocalDate dob;
+    private String gender;
+
+    // A doctor can add clinics later via a separate endpoint; keep registration lean.
+}
