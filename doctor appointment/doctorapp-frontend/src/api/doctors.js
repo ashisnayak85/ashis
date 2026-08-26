@@ -12,3 +12,8 @@ export const getDoctorSlots = (doctorId, clinicId, date) =>
   client
     .get(`/doctors/${doctorId}/slots`, { params: { clinicId, date } })
     .then((r) => r.data);
+
+export const getDoctorRatings = (doctorId, page = 0, size = 10) =>
+  client
+    .get(`/doctors/${doctorId}/ratings`, { params: { page, size } })
+    .then((r) => r.data);

@@ -20,3 +20,12 @@ export const rejectJoinRequest = (associationId) =>
 
 export const removeDoctorFromClinic = (associationId) =>
   client.delete(`/clinic-admin/associations/${associationId}`).then((r) => r.data);
+
+export const getClinicAvailability = (clinicId) =>
+  client.get(`/clinic-admin/clinics/${clinicId}/availability`).then((r) => r.data);
+
+export const activateClinicAvailability = (clinicId, availabilityId) =>
+  client.put(`/clinic-admin/clinics/${clinicId}/availability/${availabilityId}/activate`).then((r) => r.data);
+
+export const deactivateClinicAvailability = (clinicId, availabilityId) =>
+  client.put(`/clinic-admin/clinics/${clinicId}/availability/${availabilityId}/deactivate`).then((r) => r.data);

@@ -35,6 +35,4 @@ public class Patient {
     // Last known location, used as a default center for "nearby" search
     private Double lastKnownLat;
     private Double lastKnownLng;
-
-    public enum Gender { MALE, FEMALE, OTHER }
 }

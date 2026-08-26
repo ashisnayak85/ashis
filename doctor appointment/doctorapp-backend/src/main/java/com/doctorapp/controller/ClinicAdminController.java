@@ -1,5 +1,6 @@
 package com.doctorapp.controller;
 
+import com.doctorapp.dto.AvailabilityResponse;
 import com.doctorapp.dto.ClinicRequest;
 import com.doctorapp.dto.ClinicSummaryDTO;
 import com.doctorapp.dto.DoctorClinicAssociationDTO;
@@ -81,5 +82,30 @@ public class ClinicAdminController {
         Long clinicAdminId = clinicAdminService.getClinicAdminIdForUser(principal.getId());
         clinicAdminService.removeDoctor(clinicAdminId, associationId);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Weekly hours every doctor has set at this clinic, so the owner can see what's live. */
+    @GetMapping("/clinics/{clinicId}/availability")
+    public ResponseEntity<List<AvailabilityResponse>> clinicAvailability(@AuthenticationPrincipal UserPrincipal principal,
+                                                                          @PathVariable Long clinicId) {
+        Long clinicAdminId = clinicAdminService.getClinicAdminIdForUser(principal.getId());
+        return ResponseEntity.ok(clinicAdminService.getClinicAvailability(clinicAdminId, clinicId));
+    }
+
+    /** Clinic admin's override: switch a doctor's availability window at this clinic on/off. */
+    @PutMapping("/clinics/{clinicId}/availability/{availabilityId}/activate")
+    public ResponseEntity<AvailabilityResponse> activateAvailability(@AuthenticationPrincipal UserPrincipal principal,
+                                                                       @PathVariable Long clinicId,
+                                                                       @PathVariable Long availabilityId) {
+        Long clinicAdminId = clinicAdminService.getClinicAdminIdForUser(principal.getId());
+        return ResponseEntity.ok(clinicAdminService.setAvailabilityActive(clinicAdminId, clinicId, availabilityId, true));
+    }
+
+    @PutMapping("/clinics/{clinicId}/availability/{availabilityId}/deactivate")
+    public ResponseEntity<AvailabilityResponse> deactivateAvailability(@AuthenticationPrincipal UserPrincipal principal,
+                                                                        @PathVariable Long clinicId,
+                                                                        @PathVariable Long availabilityId) {
+        Long clinicAdminId = clinicAdminService.getClinicAdminIdForUser(principal.getId());
+        return ResponseEntity.ok(clinicAdminService.setAvailabilityActive(clinicAdminId, clinicId, availabilityId, false));
     }
 }

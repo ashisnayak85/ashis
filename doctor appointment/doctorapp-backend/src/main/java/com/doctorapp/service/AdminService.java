@@ -148,6 +148,8 @@ public class AdminService {
                 .consultationFee(doctor.getConsultationFee())
                 .verified(doctor.isVerified())
                 .active(doctor.isActive())
+                .avgRating(doctor.getAvgRating())
+                .ratingCount(doctor.getRatingCount())
                 .specializations(doctor.getSpecializations().stream()
                         .map(Specialization::getName).collect(Collectors.toList()))
                 .clinicCount(clinicCount)

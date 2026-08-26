@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
+import LocationPicker from "../../components/LocationPicker";
 import { getMyClinics, createClinic } from "../../api/clinicAdmin";
 import { CLINIC_ADMIN_NAV_ITEMS } from "./navItems";
 
@@ -9,6 +10,7 @@ export default function ClinicAdminClinics() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pickerKey, setPickerKey] = useState(0);
 
   const [form, setForm] = useState({
     clinicName: "",
@@ -36,27 +38,18 @@ export default function ClinicAdminClinics() {
     return (e) => setForm({ ...form, [field]: e.target.value });
   }
 
-  function useMyLocation() {
-    if (!navigator.geolocation) {
-      setError("Location isn't available in this browser. Enter coordinates manually.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm((f) => ({
-          ...f,
-          latitude: pos.coords.latitude.toFixed(6),
-          longitude: pos.coords.longitude.toFixed(6),
-        }));
-      },
-      () => setError("Couldn't get your location. Enter coordinates manually.")
-    );
+  function handleLocationPick(lat, lng) {
+    setForm((f) => ({ ...f, latitude: String(lat), longitude: String(lng) }));
   }
 
   async function submit(e) {
     e.preventDefault();
     setError("");
     setMessage("");
+    if (!form.latitude || !form.longitude) {
+      setError("Pick the clinic's location on the map before submitting.");
+      return;
+    }
     setSaving(true);
     try {
       await createClinic({
@@ -66,6 +59,7 @@ export default function ClinicAdminClinics() {
       });
       setMessage("Clinic added. An admin will verify it before it accepts doctors or appears in patient search.");
       setForm({ clinicName: "", address: "", latitude: "", longitude: "", city: "", pincode: "", phone: "" });
+      setPickerKey((k) => k + 1); // remount the map picker so its pin/search box clear too
       load();
     } catch (err) {
       setError(err.response?.data?.message || "Couldn't add that clinic.");
@@ -110,33 +104,25 @@ export default function ClinicAdminClinics() {
               <input id="c-pincode" value={form.pincode} onChange={updateForm("pincode")} />
             </div>
           </div>
+          <div className="field">
+            <label>Clinic location</label>
+            <LocationPicker
+              key={pickerKey}
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onChange={handleLocationPick}
+            />
+          </div>
           <div className="form-row">
             <div className="field">
               <label htmlFor="c-lat">Latitude</label>
-              <input
-                id="c-lat"
-                type="number"
-                step="any"
-                required
-                value={form.latitude}
-                onChange={updateForm("latitude")}
-              />
+              <input id="c-lat" type="number" step="any" readOnly value={form.latitude} />
             </div>
             <div className="field">
               <label htmlFor="c-lng">Longitude</label>
-              <input
-                id="c-lng"
-                type="number"
-                step="any"
-                required
-                value={form.longitude}
-                onChange={updateForm("longitude")}
-              />
+              <input id="c-lng" type="number" step="any" readOnly value={form.longitude} />
             </div>
           </div>
-          <button type="button" className="btn btn-secondary" onClick={useMyLocation} style={{ marginBottom: 14 }}>
-            Use my current location
-          </button>
           <button className="btn btn-primary btn-block" disabled={saving} type="submit">
             {saving ? "Saving..." : "Add clinic"}
           </button>

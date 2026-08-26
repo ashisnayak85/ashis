@@ -37,6 +37,8 @@ public class ClinicRepositoryCustomImpl implements ClinicRepositoryCustom {
                 d.experience_years AS experience_years,
                 d.consultation_fee AS consultation_fee,
                 d.profile_image_url AS profile_image_url,
+                d.avg_rating AS avg_rating,
+                d.rating_count AS rating_count,
                 c.id AS clinic_id,
                 c.clinic_name AS clinic_name,
                 c.address AS address,
@@ -91,12 +93,14 @@ public class ClinicRepositoryCustomImpl implements ClinicRepositoryCustom {
                 row[3] == null ? null : ((Number) row[3]).intValue(),
                 row[4] == null ? null : new BigDecimal(row[4].toString()),
                 (String) row[5],
-                ((Number) row[6]).longValue(),
-                (String) row[7],
-                (String) row[8],
-                ((Number) row[9]).doubleValue(),
-                ((Number) row[10]).doubleValue(),
-                ((Number) row[11]).doubleValue()
+                row[6] == null ? null : ((Number) row[6]).doubleValue(),
+                row[7] == null ? null : ((Number) row[7]).intValue(),
+                ((Number) row[8]).longValue(),
+                (String) row[9],
+                (String) row[10],
+                ((Number) row[11]).doubleValue(),
+                ((Number) row[12]).doubleValue(),
+                ((Number) row[13]).doubleValue()
             ));
         }
         return results;

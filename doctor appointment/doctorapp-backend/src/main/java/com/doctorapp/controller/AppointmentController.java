@@ -2,8 +2,11 @@ package com.doctorapp.controller;
 
 import com.doctorapp.dto.AppointmentDTO;
 import com.doctorapp.dto.BookAppointmentRequest;
+import com.doctorapp.dto.RatingDTO;
+import com.doctorapp.dto.RatingRequest;
 import com.doctorapp.security.UserPrincipal;
 import com.doctorapp.service.AppointmentService;
+import com.doctorapp.service.RatingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final RatingService ratingService;
 
     @PostMapping
     public ResponseEntity<AppointmentDTO> book(@AuthenticationPrincipal UserPrincipal principal,
@@ -37,5 +41,14 @@ public class AppointmentController {
     public ResponseEntity<AppointmentDTO> cancel(@AuthenticationPrincipal UserPrincipal principal,
                                                   @PathVariable Long id) {
         return ResponseEntity.ok(appointmentService.cancel(principal.getId(), id));
+    }
+
+    /** Rate & review a completed appointment. One rating per appointment - see RatingService. */
+    @PostMapping("/{id}/rating")
+    public ResponseEntity<RatingDTO> rate(@AuthenticationPrincipal UserPrincipal principal,
+                                           @PathVariable Long id,
+                                           @Valid @RequestBody RatingRequest req) {
+        return ResponseEntity.ok(
+                ratingService.submitRating(principal.getId(), id, req.getRating(), req.getReviewText()));
     }
 }

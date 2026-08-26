@@ -13,7 +13,9 @@ import java.time.LocalTime;
 public class AvailabilityResponse {
     private Long id;
     private Long doctorId;
+    private String doctorName;
     private Long clinicId;
+    private String clinicName;
     private DayOfWeek dayOfWeek;
     private LocalTime startTime;
     private LocalTime endTime;

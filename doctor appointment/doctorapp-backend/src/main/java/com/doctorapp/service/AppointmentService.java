@@ -13,6 +13,7 @@ import com.doctorapp.repository.AppointmentRepository;
 import com.doctorapp.repository.AppointmentSlotRepository;
 import com.doctorapp.repository.DoctorRepository;
 import com.doctorapp.repository.PatientRepository;
+import com.doctorapp.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final RatingRepository ratingRepository;
 
     /**
      * Booking flow: AVAILABLE -> (lock row) -> re-check status -> BOOKED + create
@@ -202,15 +204,20 @@ public class AppointmentService {
     private AppointmentDTO toDTO(Appointment a) {
         return AppointmentDTO.builder()
                 .id(a.getId())
+                .doctorId(a.getDoctor().getId())
                 .doctorName(a.getDoctor().getName())
                 .clinicName(a.getClinic().getClinicName())
                 .clinicAddress(a.getClinic().getAddress())
+                .clinicLatitude(a.getClinic().getLatitude())
+                .clinicLongitude(a.getClinic().getLongitude())
                 .appointmentDate(a.getAppointmentDate())
                 .startTime(a.getStartTime())
                 .endTime(a.getEndTime())
                 .status(a.getStatus().name())
                 .consultationFee(a.getConsultationFee())
                 .paymentStatus(a.getPaymentStatus().name())
+                .rated(a.getStatus() == Appointment.AppointmentStatus.COMPLETED
+                        && ratingRepository.existsByAppointmentId(a.getId()))
                 .build();
     }
 }

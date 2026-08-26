@@ -1,6 +1,7 @@
 package com.doctorapp.controller;
 
 import com.doctorapp.dto.AvailabilityRequest;
+import com.doctorapp.dto.AvailabilityResponse;
 import com.doctorapp.security.UserPrincipal;
 import com.doctorapp.service.DoctorService;
 import com.doctorapp.service.SlotService;
@@ -11,7 +12,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-/** Doctor-only: define the weekly recurring working-hours template. */
+import java.util.List;
+
+/** Doctor-only: define and review the weekly recurring working-hours template. */
 @RestController
 @RequestMapping("/api/doctor/availability")
 @RequiredArgsConstructor
@@ -26,5 +29,20 @@ public class DoctorAvailabilityController {
                                   @Valid @RequestBody AvailabilityRequest req) {
         Long doctorId = doctorService.getDoctorIdForUser(principal.getId());
         return ResponseEntity.ok(slotService.addAvailability(doctorId, req));
+    }
+
+    /** The logged-in doctor's own weekly hours, across every clinic they work at. */
+    @GetMapping
+    public ResponseEntity<List<AvailabilityResponse>> mine(@AuthenticationPrincipal UserPrincipal principal) {
+        Long doctorId = doctorService.getDoctorIdForUser(principal.getId());
+        return ResponseEntity.ok(slotService.getMyAvailability(doctorId));
+    }
+
+    @DeleteMapping("/{availabilityId}")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal UserPrincipal principal,
+                                        @PathVariable Long availabilityId) {
+        Long doctorId = doctorService.getDoctorIdForUser(principal.getId());
+        slotService.deleteAvailability(doctorId, availabilityId);
+        return ResponseEntity.noContent().build();
     }
 }

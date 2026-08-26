@@ -1,5 +1,6 @@
 package com.doctorapp.service;
 
+import com.doctorapp.dto.AvailabilityResponse;
 import com.doctorapp.dto.ClinicRequest;
 import com.doctorapp.dto.ClinicSummaryDTO;
 import com.doctorapp.dto.DoctorClinicAssociationDTO;
@@ -43,6 +44,7 @@ public class ClinicAdminService {
     private final DoctorRepository doctorRepository;
     private final DoctorClinicAssociationRepository associationRepository;
     private final UserRepository userRepository;
+    private final SlotService slotService;
 
     public Long getClinicAdminIdForUser(Long userId) {
         return clinicAdminRepository.findByUserId(userId)
@@ -170,6 +172,24 @@ public class ClinicAdminService {
         association.setStatus(Status.REMOVED);
         association.setRespondedAt(LocalDateTime.now());
         associationRepository.save(association);
+    }
+
+    /** Weekly hours every doctor has set at one of this admin's clinics - the "read" half of point #1. */
+    @Transactional(readOnly = true)
+    public List<AvailabilityResponse> getClinicAvailability(Long clinicAdminId, Long clinicId) {
+        Clinic clinic = requireOwnedClinic(clinicAdminId, clinicId);
+        return slotService.getClinicAvailability(clinic.getId());
+    }
+
+    /**
+     * The clinic admin's override lever: turn a doctor's availability window at their
+     * clinic on or off. Doctors still author their own hours, but the clinic gets the
+     * final say on what actually goes live at their location.
+     */
+    @Transactional
+    public AvailabilityResponse setAvailabilityActive(Long clinicAdminId, Long clinicId, Long availabilityId, boolean active) {
+        Clinic clinic = requireOwnedClinic(clinicAdminId, clinicId);
+        return slotService.setAvailabilityActive(clinic.getId(), availabilityId, active);
     }
 
     private Clinic requireOwnedClinic(Long clinicAdminId, Long clinicId) {

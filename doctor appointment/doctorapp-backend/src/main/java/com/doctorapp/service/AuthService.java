@@ -3,6 +3,7 @@ package com.doctorapp.service;
 import com.doctorapp.dto.*;
 import com.doctorapp.entity.ClinicAdmin;
 import com.doctorapp.entity.Doctor;
+import com.doctorapp.entity.Gender;
 import com.doctorapp.entity.Patient;
 import com.doctorapp.entity.Specialization;
 import com.doctorapp.entity.User;
@@ -139,14 +140,13 @@ public class AuthService {
         return buildAuthResponse(user, resolveName(user));
     }
     // Shared by both registerPatient() and registerDoctor() - Doctor.gender and
-    // Patient.gender are both typed as Patient.Gender (see Doctor.java's import),
-    // so one parser covers every role that collects gender.
-    private Patient.Gender parseGender(String gender) {
+    // Patient.gender are both typed as the shared entity.Gender enum.
+    private Gender parseGender(String gender) {
         if (gender == null || gender.isBlank()) {
             return null;
         }
         try {
-            return Patient.Gender.valueOf(gender.trim().toUpperCase());
+            return Gender.valueOf(gender.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Gender must be one of MALE, FEMALE, OTHER");
         }

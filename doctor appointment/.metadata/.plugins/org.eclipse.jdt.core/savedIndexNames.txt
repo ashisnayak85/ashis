@@ -10,7 +10,6 @@ INDEX VERSION 1.134+C:\Users\ashis\doctor appointment\.metadata\.plugins\org.ecl
 2868882764.index
 2183444086.index
 3915165141.index
-4273106362.index
 2971718402.index
 407084563.index
 1319618784.index

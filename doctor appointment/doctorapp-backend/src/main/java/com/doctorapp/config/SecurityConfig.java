@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/doctors/nearby", "/api/doctors/search", "/api/doctors/*/profile").permitAll()
                 .requestMatchers("/api/doctors/*/slots").permitAll()
+                .requestMatchers("/api/doctors/*/ratings").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/patient/**").hasRole("PATIENT")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")

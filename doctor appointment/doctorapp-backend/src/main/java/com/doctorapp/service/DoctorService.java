@@ -59,6 +59,8 @@ public class DoctorService {
                 .consultationFee(doctor.getConsultationFee())
                 .profileImageUrl(doctor.getProfileImageUrl())
                 .verified(doctor.isVerified())
+                .avgRating(doctor.getAvgRating())
+                .ratingCount(doctor.getRatingCount())
                 .specializations(doctor.getSpecializations().stream()
                         .map(Specialization::getName).collect(Collectors.toList()))
                 .clinics(clinics.stream().map(c -> DoctorProfileDTO.ClinicSummary.builder()

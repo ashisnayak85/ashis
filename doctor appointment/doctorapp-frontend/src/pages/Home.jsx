@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { findNearbyDoctors } from "../api/doctors";
+import StarRating from "../components/StarRating";
+
+// Deep link into Google Maps turn-by-turn directions. Needs no API key/billing.
+function directionsUrl(lat, lng) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+}
 
 const SPECIALIZATIONS = [
   "General Physician", "Dentist", "Cardiologist", "Dermatologist",
@@ -97,6 +103,23 @@ export default function Home() {
                 <h3 style={{ marginBottom: 2 }}>{doc.doctorName}</h3>
                 <p style={{ margin: 0 }}>{doc.qualification} · {doc.experienceYears ?? 0} yrs experience</p>
                 <p style={{ margin: 0 }}>{doc.clinicName} — {doc.address}</p>
+                {doc.latitude != null && doc.longitude != null && (
+                  <a
+                    className="directions-link"
+                    href={directionsUrl(doc.latitude, doc.longitude)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    📍 Directions
+                  </a>
+                )}
+                {doc.ratingCount > 0 && (
+                  <div className="rating-badge" style={{ marginTop: 4 }}>
+                    <StarRating value={doc.avgRating} size={14} />
+                    <span>{doc.avgRating}</span>
+                    <span className="rating-count">({doc.ratingCount})</span>
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>

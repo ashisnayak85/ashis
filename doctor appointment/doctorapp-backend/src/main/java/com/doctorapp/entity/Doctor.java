@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.doctorapp.entity.Patient.Gender;
-
 @Entity
 @Table(name = "doctors")
 @Getter
@@ -52,6 +50,19 @@ public class Doctor {
 
     @Builder.Default
     private boolean active = true;
+
+    // Denormalized cache of ratings.rating aggregated for this doctor, kept in
+    // sync by RatingService on every rating write (see RatingService.recalculateDoctorRating).
+    // Stored so doctor listing/search pages can show a star rating without an
+    // extra aggregate query per doctor. avgRating is rounded to 1 decimal place,
+    // e.g. 4.6 - never rounded to a whole star (see product notes on why).
+    @Column(name = "avg_rating")
+    @Builder.Default
+    private Double avgRating = 0.0;
+
+    @Column(name = "rating_count")
+    @Builder.Default
+    private Integer ratingCount = 0;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

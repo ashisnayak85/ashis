@@ -11,6 +11,11 @@ export const getMyPatients = () => client.get("/doctor/patients").then((r) => r.
 
 export const addAvailability = (payload) => client.post("/doctor/availability", payload).then((r) => r.data);
 
+export const getMyAvailability = () => client.get("/doctor/availability").then((r) => r.data);
+
+export const deleteAvailability = (availabilityId) =>
+  client.delete(`/doctor/availability/${availabilityId}`).then((r) => r.data);
+
 // --- Clinic associations (replaces the old doctor-owned "addClinic") ---
 
 export const browseClinics = (city) =>

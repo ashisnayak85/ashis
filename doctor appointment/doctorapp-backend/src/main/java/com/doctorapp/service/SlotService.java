@@ -38,6 +38,10 @@ public class SlotService {
 
     @Transactional
     public AvailabilityResponse addAvailability(Long doctorId, AvailabilityRequest req) {
+        if (!req.getStartTime().isBefore(req.getEndTime())) {
+            throw new BusinessException("Start time must be before end time.");
+        }
+
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found: " + doctorId));
         Clinic clinic = clinicRepository.findById(req.getClinicId())
@@ -50,6 +54,19 @@ public class SlotService {
             throw new BusinessException("You're not an approved doctor at this clinic yet.");
         }
 
+        // A doctor is one person and can't physically be in two places at once, so
+        // reject any new/edited window that overlaps a window they already have -
+        // whether that's at this same clinic or a different one they also work at.
+        List<DoctorAvailability> clashes = availabilityRepository.findOverlapping(
+                doctorId, req.getDayOfWeek(), req.getStartTime(), req.getEndTime());
+        if (!clashes.isEmpty()) {
+            DoctorAvailability clash = clashes.get(0);
+            throw new BusinessException(String.format(
+                    "That overlaps your existing %s %s-%s hours at %s. Adjust the time or remove that slot first.",
+                    clash.getDayOfWeek().toString().substring(0, 1) + clash.getDayOfWeek().toString().substring(1).toLowerCase(),
+                    clash.getStartTime(), clash.getEndTime(), clash.getClinic().getClinicName()));
+        }
+
         DoctorAvailability availability = DoctorAvailability.builder()
                 .doctor(doctor)
                 .clinic(clinic)
@@ -60,15 +77,69 @@ public class SlotService {
                 .build();
         DoctorAvailability saved = availabilityRepository.save(availability);
 
+        return toResponse(saved);
+    }
+
+    /** All of this doctor's weekly hours, across every clinic they work at. */
+    @Transactional(readOnly = true)
+    public List<AvailabilityResponse> getMyAvailability(Long doctorId) {
+        return availabilityRepository.findByDoctorIdOrderByDayOfWeekAscStartTimeAsc(doctorId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /** All doctors' weekly hours at one clinic - for the clinic admin to review. */
+    @Transactional(readOnly = true)
+    public List<AvailabilityResponse> getClinicAvailability(Long clinicId) {
+        return availabilityRepository.findByClinicIdOrderByDayOfWeekAscStartTimeAsc(clinicId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * A doctor deletes one of their own recurring availability windows. Future dates
+     * that already had bookable slots generated are left alone (existing bookings must
+     * stay honoured) - this only stops new dates from generating slots for this window.
+     */
+    @Transactional
+    public void deleteAvailability(Long doctorId, Long availabilityId) {
+        DoctorAvailability availability = availabilityRepository.findById(availabilityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Availability not found: " + availabilityId));
+        if (!availability.getDoctor().getId().equals(doctorId)) {
+            throw new BusinessException("You can only remove your own availability.");
+        }
+        availabilityRepository.delete(availability);
+    }
+
+    /**
+     * Clinic admin turns a doctor's availability window at their clinic on/off. This is
+     * the clinic's override lever: they can't invent hours for a doctor, but they can
+     * pull a window a doctor set that doesn't work for the clinic (double-booked room,
+     * doctor no longer keeping those hours, etc.) without removing the doctor entirely.
+     */
+    @Transactional
+    public AvailabilityResponse setAvailabilityActive(Long clinicId, Long availabilityId, boolean active) {
+        DoctorAvailability availability = availabilityRepository.findById(availabilityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Availability not found: " + availabilityId));
+        if (!availability.getClinic().getId().equals(clinicId)) {
+            throw new BusinessException("This availability window isn't at your clinic.");
+        }
+        availability.setActive(active);
+        return toResponse(availabilityRepository.save(availability));
+    }
+
+    private AvailabilityResponse toResponse(DoctorAvailability a) {
         return AvailabilityResponse.builder()
-                .id(saved.getId())
-                .doctorId(doctorId)
-                .clinicId(clinic.getId())
-                .dayOfWeek(saved.getDayOfWeek())
-                .startTime(saved.getStartTime())
-                .endTime(saved.getEndTime())
-                .slotDurationMinutes(saved.getSlotDurationMinutes())
-                .active(saved.isActive())
+                .id(a.getId())
+                .doctorId(a.getDoctor().getId())
+                .doctorName(a.getDoctor().getName())
+                .clinicId(a.getClinic().getId())
+                .clinicName(a.getClinic().getClinicName())
+                .dayOfWeek(a.getDayOfWeek())
+                .startTime(a.getStartTime())
+                .endTime(a.getEndTime())
+                .slotDurationMinutes(a.getSlotDurationMinutes())
+                .active(a.isActive())
                 .build();
     }
 

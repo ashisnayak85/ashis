@@ -18,6 +18,8 @@ public class DoctorProfileDTO {
     private BigDecimal consultationFee;
     private String profileImageUrl;
     private boolean verified;
+    private Double avgRating;
+    private Integer ratingCount;
     private List<String> specializations;
     private List<ClinicSummary> clinics;
 

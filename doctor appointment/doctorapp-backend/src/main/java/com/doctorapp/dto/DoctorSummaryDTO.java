@@ -21,6 +21,8 @@ public class DoctorSummaryDTO {
     private BigDecimal consultationFee;
     private boolean verified;
     private boolean active;
+    private Double avgRating;
+    private Integer ratingCount;
     private List<String> specializations;
     private int clinicCount;
     private LocalDateTime createdAt;

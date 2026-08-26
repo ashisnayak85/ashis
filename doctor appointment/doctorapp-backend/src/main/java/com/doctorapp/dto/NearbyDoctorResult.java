@@ -23,6 +23,8 @@ public class NearbyDoctorResult {
     private Integer experienceYears;
     private BigDecimal consultationFee;
     private String profileImageUrl;
+    private Double avgRating;
+    private Integer ratingCount;
     private Long clinicId;
     private String clinicName;
     private String address;

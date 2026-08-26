@@ -8,6 +8,8 @@ import {
   rejectClinicInvite,
   leaveClinic,
   addAvailability,
+  getMyAvailability,
+  deleteAvailability,
 } from "../../api/doctorDashboard";
 import { DOCTOR_NAV_ITEMS } from "./navItems";
 
@@ -43,6 +45,18 @@ export default function DoctorClinic() {
   });
   const [savingAvail, setSavingAvail] = useState(false);
 
+  const [myAvailability, setMyAvailability] = useState([]);
+  const [availLoading, setAvailLoading] = useState(true);
+  const [deletingAvailId, setDeletingAvailId] = useState(null);
+
+  function loadAvailability() {
+    setAvailLoading(true);
+    getMyAvailability()
+      .then(setMyAvailability)
+      .catch(() => setError("Couldn't load your weekly hours."))
+      .finally(() => setAvailLoading(false));
+  }
+
   const approvedClinics = associations
     .filter((a) => a.status === "APPROVED")
     .map((a) => ({ id: a.clinicId, clinicName: a.clinicName, clinicAddress: a.clinicAddress }));
@@ -61,6 +75,7 @@ export default function DoctorClinic() {
 
   useEffect(() => {
     loadAssociations();
+    loadAvailability();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -144,10 +159,26 @@ export default function DoctorClinic() {
         slotDurationMinutes: Number(availForm.slotDurationMinutes),
       });
       setMessage("Weekly availability added.");
+      loadAvailability();
     } catch (err) {
       setError(err.response?.data?.message || "Couldn't add availability.");
     } finally {
       setSavingAvail(false);
+    }
+  }
+
+  async function handleDeleteAvailability(availabilityId) {
+    setDeletingAvailId(availabilityId);
+    setError("");
+    setMessage("");
+    try {
+      await deleteAvailability(availabilityId);
+      setMessage("Availability removed.");
+      loadAvailability();
+    } catch (err) {
+      setError(err.response?.data?.message || "Couldn't remove that availability.");
+    } finally {
+      setDeletingAvailId(null);
     }
   }
 
@@ -318,8 +349,64 @@ export default function DoctorClinic() {
         )}
       </div>
 
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3>My weekly hours</h3>
+        {availLoading ? (
+          <p>Loading...</p>
+        ) : myAvailability.length === 0 ? (
+          <p>You haven't set any working hours yet. Add some below.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Clinic</th>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Slot length</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myAvailability.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.clinicName}</td>
+                    <td>{labelDay(a.dayOfWeek)}</td>
+                    <td>
+                      {a.startTime}–{a.endTime}
+                    </td>
+                    <td>{a.slotDurationMinutes} min</td>
+                    <td>
+                      <span className={`badge ${a.active ? "badge-success" : "badge-muted"}`}>
+                        {a.active ? "Active" : "Turned off by clinic"}
+                      </span>
+                    </td>
+                    <td className="actions">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        disabled={deletingAvailId === a.id}
+                        onClick={() => handleDeleteAvailability(a.id)}
+                      >
+                        {deletingAvailId === a.id ? "Removing..." : "Remove"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!availLoading && myAvailability.some((a) => !a.active) && (
+          <p style={{ marginTop: 12, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
+            Hours marked "Turned off by clinic" were switched off by that clinic's admin and won't be bookable
+            until they're turned back on.
+          </p>
+        )}
+      </div>
+
       <div className="card">
-        <h3>Weekly availability</h3>
+        <h3>Add weekly availability</h3>
         {loading ? (
           <p>Loading...</p>
         ) : approvedClinics.length === 0 ? (

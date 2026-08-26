@@ -229,6 +229,90 @@ button, input, select { font-family: inherit; font-size: 1rem; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-soft); }
 
+/* ===================== Ratings & reviews ===================== */
+
+.star-rating { display: inline-flex; gap: 2px; line-height: 1; }
+
+.star-wrap { position: relative; display: inline-block; }
+.star { display: block; }
+.star-empty { color: var(--line); }
+.star-filled {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.star-rating-input { gap: 4px; }
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--line);
+  padding: 2px;
+  line-height: 1;
+}
+.star-btn-active { color: var(--accent); }
+
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rating-badge .rating-count { color: var(--ink-soft); font-weight: 500; font-size: 0.88rem; }
+
+.rating-summary { display: flex; gap: 28px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.rating-summary-score { text-align: center; }
+.rating-summary-score .big-number {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+.rating-summary-score .rating-count { display: block; margin-top: 6px; color: var(--ink-soft); font-size: 0.85rem; }
+
+.rating-distribution { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+.rating-bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--ink-soft); }
+.rating-bar-row .star-label { width: 34px; flex-shrink: 0; }
+.rating-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.rating-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.rating-bar-row .bar-count { width: 32px; text-align: right; flex-shrink: 0; }
+
+.review-item { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.review-item:last-child { border-bottom: none; }
+.review-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.review-author { font-weight: 600; }
+.review-date { color: var(--ink-soft); font-size: 0.82rem; }
+.review-text { margin-top: 8px; margin-bottom: 0; }
+
+.rate-visit-card {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.rate-visit-card textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 64px;
+}
+.rated-badge { color: var(--success); font-weight: 600; font-size: 0.9rem; }
+
 @media (max-width: 640px) {
   .hero h1 { font-size: 1.8rem; }
   .doctor-card { flex-direction: column; align-items: flex-start; }
@@ -455,4 +539,48 @@ table.data-table { width: 100%; border-collapse: collapse; min-width: 560px; }
   border-radius: 10px;
   font-size: 0.9rem;
   margin-bottom: 18px;
+}
+
+/* Location picker (map-based clinic registration) */
+.location-picker { margin-bottom: 16px; }
+.location-picker-map { margin: 10px 0; }
+.location-picker-results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 1px solid #dfe4e2;
+  border-radius: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  position: absolute;
+  background: #fff;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.location-picker-results li {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f1f0;
+}
+.location-picker-results li:last-child { border-bottom: none; }
+.location-picker-results li:hover { background: #f4f7f6; }
+.location-picker-hint { font-size: 0.82rem; color: var(--ink-soft); margin-top: 6px; }
+.location-picker-error { color: #b3441f; }
+.location-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Directions button on doctor/clinic profile */
+.directions-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 6px;
 }
