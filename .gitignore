@@ -1,2 +1,5 @@
-# Eclipse
+# Ignore Eclipse workspace metadata
 .metadata/
+*/.metadata/
+bin/
+*.class
