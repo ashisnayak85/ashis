@@ -279,6 +279,18 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .panel-header h2 { margin: 0; }
 
+/* ---------- Resignation module ---------- */
+.stacked-panel { margin-top: 20px; }
+.resignation-detail { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid #e2e8f0; margin-top: 14px; padding-top: 14px; }
+.detail-header { display: flex; flex-direction: column; gap: 4px; }
+.approval-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.approval-step { border-left: 3px solid #cbd5e1; padding: 6px 12px; border-radius: 4px; background: #f8fafc; }
+.approval-step.approval-approved { border-left-color: #16a34a; }
+.approval-step.approval-rejected { border-left-color: #dc2626; }
+.approval-step.approval-skipped { border-left-color: #94a3b8; opacity: 0.75; }
+.approval-step.approval-pending { border-left-color: #d97706; }
+.muted-text { color: #64748b; font-size: 0.85rem; }
+
 /* ---------- Filter bar (leave search: status/date-range/employee) ---------- */
 .filter-bar {
   display: flex;
@@ -512,3 +524,33 @@ input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: n
 
 .reply-box { display: flex; gap: 8px; align-items: flex-start; }
 .reply-box textarea { flex: 1; }
+
+/* Resignation Workflow Setup - tab strip (Workflow Roles / Approval Chain / Employee Access) */
+.tab-strip { display: flex; gap: 4px; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.25rem; }
+.tab-btn {
+  background: none; border: none; padding: 10px 16px; font-size: 0.9rem; font-weight: 500;
+  color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab-btn:hover { color: #334155; }
+.tab-btn-active { color: #2563eb; border-bottom-color: #2563eb; }
+.hint-text { color: #64748b; font-size: 0.85rem; margin: -0.5rem 0 1rem; }
+
+/* ---------------- Hiring module ---------------- */
+.picker { position: relative; }
+.picker-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; }
+.picker-list { position: absolute; z-index: 20; left: 0; right: 0; margin: 2px 0 0; padding: 4px; list-style: none; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto; }
+.picker-list button { width: 100%; text-align: left; background: none; border: 0; padding: 7px 8px; cursor: pointer; border-radius: 4px; font: inherit; }
+.picker-list button:hover { background: #eef2ff; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip-remove { background: none; border: 0; cursor: pointer; margin-left: 6px; font-size: 15px; line-height: 1; color: #64748b; }
+.inline-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 48px; gap: 10px; align-items: center; margin: 5px 0; font-size: 14px; }
+.bar-track { background: #e2e8f0; border-radius: 4px; height: 12px; overflow: hidden; }
+.bar-fill { background: #4f46e5; height: 100%; min-width: 2px; }
+.kv-grid { display: grid; grid-template-columns: 170px 1fr; gap: 6px 14px; margin: 0; }
+.kv-grid dt { color: #64748b; }
+.kv-grid dd { margin: 0; }
+.feedback-box { border-left: 3px solid #cbd5e1; padding: 6px 12px; margin: 8px 0; background: #f8fafc; border-radius: 4px; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #f1f5f9; }
+@media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr; } .bar-row { grid-template-columns: 100px 1fr 40px; } }

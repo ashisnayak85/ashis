@@ -6,13 +6,16 @@ import com.enterprise.ems.dto.PageResponse;
 import com.enterprise.ems.entity.Department;
 import com.enterprise.ems.entity.Designation;
 import com.enterprise.ems.entity.Employee;
+import com.enterprise.ems.entity.EmployeeType;
 import com.enterprise.ems.entity.Location;
+import com.enterprise.ems.exception.BusinessException;
 import com.enterprise.ems.exception.DuplicateResourceException;
 import com.enterprise.ems.exception.ResourceNotFoundException;
 import com.enterprise.ems.mapper.EmployeeMapper;
 import com.enterprise.ems.repository.DepartmentRepository;
 import com.enterprise.ems.repository.DesignationRepository;
 import com.enterprise.ems.repository.EmployeeRepository;
+import com.enterprise.ems.repository.EmployeeTypeRepository;
 import com.enterprise.ems.repository.LocationRepository;
 import com.enterprise.ems.service.AuditService;
 import com.enterprise.ems.service.EmployeeService;
@@ -63,6 +66,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final DesignationRepository designationRepository;
     private final EmployeeMapper employeeMapper;
     private final AuditService auditService;
+    private final EmployeeTypeRepository employeeTypeRepository;
 
     @Override
     @CacheEvict(value = "employees", allEntries = true)
@@ -84,6 +88,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Department department = departmentRepository.findById(dto.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found: " + dto.getDepartmentId()));
 
+        EmployeeType employeeType = employeeTypeRepository.findById(dto.getEmployeeTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee Type not found: " + dto.getEmployeeTypeId()));
         // Location is optional today (see EmployeeDTO.locationId comment) - resolve
         // only if the caller actually provided one.
         Location location = null;
@@ -99,7 +105,15 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .orElseThrow(() -> new ResourceNotFoundException("Designation not found: " + dto.getDesignationId()));
         }
 
-        Employee employee = employeeMapper.toEntity(dto, department, location, designation);
+        // Reporting manager is optional - resolve if provided. On create there's
+        // no id yet to self-reference against, so no guard needed here (unlike update()).
+        Employee reportingManager = null;
+        if (dto.getReportingManagerId() != null) {
+            reportingManager = employeeRepository.findById(dto.getReportingManagerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Reporting manager not found: " + dto.getReportingManagerId()));
+        }
+
+        Employee employee = employeeMapper.toEntity(dto, department, employeeType, location, designation, reportingManager);
         Employee saved = employeeRepository.save(employee);
 
         auditService.log("CREATE", "Employee", saved.getId(), "Created employee: " + saved.getEmployeeCode());
@@ -132,6 +146,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         Department department = departmentRepository.findById(dto.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found: " + dto.getDepartmentId()));
 
+        EmployeeType employeeType = employeeTypeRepository.findById(dto.getEmployeeTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee Type not found: " + dto.getEmployeeTypeId()));
+
         Location location = null;
         if (dto.getLocationId() != null) {
             location = locationRepository.findById(dto.getLocationId())
@@ -144,7 +161,20 @@ public class EmployeeServiceImpl implements EmployeeService {
                     .orElseThrow(() -> new ResourceNotFoundException("Designation not found: " + dto.getDesignationId()));
         }
 
-        employeeMapper.updateEntity(employee, dto, department, location, designation);
+        // Reporting manager is optional - resolve if provided, guarding against
+        // an employee being set as their own manager (a trivial self-loop that
+        // would otherwise silently break REPORTING_MANAGER resolution in the
+        // resignation module - see ResignationServiceImpl.resolveApprover()).
+        Employee reportingManager = null;
+        if (dto.getReportingManagerId() != null) {
+            if (dto.getReportingManagerId().equals(id)) {
+                throw new BusinessException("An employee cannot be their own reporting manager");
+            }
+            reportingManager = employeeRepository.findById(dto.getReportingManagerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Reporting manager not found: " + dto.getReportingManagerId()));
+        }
+
+        employeeMapper.updateEntity(employee, dto, department, employeeType, location, designation, reportingManager);
         Employee updated = employeeRepository.save(employee);
 
         auditService.log("UPDATE", "Employee", id, "Updated employee: " + updated.getEmployeeCode());

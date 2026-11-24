@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { getActiveDepartments } from '../api/departments';
 import { getActiveDesignations } from '../api/designations';
 import { getActiveLocations } from '../api/locations';
+import { getEmployees } from '../api/employees';
+import { getActiveEmployeeType } from '../api/employeeType';
 import { getFiles, fileDownloadUrl, QUALIFICATION_CERT_ENTITY_TYPE } from '../api/files';
 import { ErrorBanner } from './Feedback';
 
@@ -17,7 +19,9 @@ const emptyForm = {
   designationId: '',
   gender: '',
   departmentId: '',
+  employeeTypeId: '',
   locationId: '',
+  reportingManagerId: '',
   active: true,
 
   // Qualification & experience
@@ -67,7 +71,9 @@ export default function EmployeeFormModal({ employee, onClose, onSubmit }) {
   );
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
+  const [employeeTypes, setEmployeeTypes] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [potentialManagers, setPotentialManagers] = useState([]);
   const [error, setError] = useState('');
   const [errorList, setErrorList] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -81,11 +87,23 @@ export default function EmployeeFormModal({ employee, onClose, onSubmit }) {
   }, []);
 
   useEffect(() => {
+    getActiveEmployeeType().then((res) => setEmployeeTypes(res.data || []));
+  }, []);
+
+  useEffect(() => {
     getActiveDesignations().then((res) => setDesignations(res.data || []));
   }, []);
 
   useEffect(() => {
     getActiveLocations().then((res) => setLocations(res.data || []));
+  }, []);
+
+  // Reporting manager can be any employee - reuses the same active-employee
+  // list the rest of the app already fetches for dropdowns (Leaves, etc).
+  // A large size covers realistic org sizes without needing search-as-you-type;
+  // revisit with a proper autocomplete endpoint if this ever gets too big.
+  useEffect(() => {
+    getEmployees({ page: 0, size: 500 }).then((res) => setPotentialManagers(res.data?.content || []));
   }, []);
 
   // If editing an employee who already has a certificate on file, show it
@@ -152,8 +170,10 @@ export default function EmployeeFormModal({ employee, onClose, onSubmit }) {
         {
           ...cleaned,
           departmentId: form.departmentId ? Number(form.departmentId) : null,
+          employeeTypeId: form.employeeTypeId ? Number(form.employeeTypeId) : null,
           locationId: form.locationId ? Number(form.locationId) : null,
           designationId: form.designationId ? Number(form.designationId) : null,
+          reportingManagerId: form.reportingManagerId ? Number(form.reportingManagerId) : null,
           salary: form.salary === '' ? null : Number(form.salary),
           yearOfPassing: form.yearOfPassing === '' ? null : Number(form.yearOfPassing),
           totalExperience: form.totalExperience === '' ? null : Number(form.totalExperience),
@@ -261,12 +281,34 @@ export default function EmployeeFormModal({ employee, onClose, onSubmit }) {
               {fieldError('departmentId') && <span className="field-error">{fieldError('departmentId')}</span>}
             </label>
             <label>
+              Employee Type
+              {/* <select name="departmentId" className={errClass('departmentId')} value={form.departmentId || ''} onChange={(e) => update('departmentId', e.target.value)} required> */}
+                <select name="employeeTypeId"  value={form.employeeTypeId || ''} onChange={(e) => update('employeeTypeId', e.target.value)} required>
+                <option value="" disabled>Select Employee Type</option>
+                {employeeTypes.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              {fieldError('employeeTypeId') && <span className="field-error">{fieldError('employeeTypeId')}</span>}
+            </label>
+            <label>
               Location
               <select value={form.locationId || ''} onChange={(e) => update('locationId', e.target.value)}>
                 <option value="">Select location</option>
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}{l.city ? ` (${l.city})` : ''}</option>
                 ))}
+              </select>
+            </label>
+            <label>
+              Reporting Manager
+              <select value={form.reportingManagerId || ''} onChange={(e) => update('reportingManagerId', e.target.value)}>
+                <option value="">None</option>
+                {potentialManagers
+                  .filter((m) => !employee || m.id !== employee.id) // can't be your own manager
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>{m.firstName} {m.lastName} ({m.employeeCode})</option>
+                  ))}
               </select>
             </label>
             <label className="checkbox-label">

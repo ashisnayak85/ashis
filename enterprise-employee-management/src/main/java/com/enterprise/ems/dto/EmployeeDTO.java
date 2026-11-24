@@ -115,6 +115,10 @@ public class EmployeeDTO {
     @NotNull(message = "Department is required")
     private Long departmentId;
 
+    @NotNull(message= "Employee Type is required")
+    private Long employeeTypeId;
+    private String employeeTypeName;
+    
     private String departmentName;
 
     // Optional for now (unlike departmentId) - existing employees predate this
@@ -122,6 +126,11 @@ public class EmployeeDTO {
     private Long locationId;
 
     private String locationName;
+
+    // Reporting manager for resignation approval routing (REPORTING_MANAGER
+    // stage type - see ResignationApprovalStage). Optional, self-referencing.
+    private Long reportingManagerId;
+    private String reportingManagerName;
 
     private Boolean active;
 }

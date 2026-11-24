@@ -4,7 +4,9 @@ import com.enterprise.ems.dto.EmployeeDTO;
 import com.enterprise.ems.entity.Department;
 import com.enterprise.ems.entity.Employee;
 import com.enterprise.ems.exception.DuplicateResourceException;
+import com.enterprise.ems.entity.EmployeeType;
 import com.enterprise.ems.mapper.EmployeeMapper;
+import com.enterprise.ems.repository.EmployeeTypeRepository;
 import com.enterprise.ems.repository.DepartmentRepository;
 import com.enterprise.ems.repository.EmployeeRepository;
 import com.enterprise.ems.service.impl.EmployeeServiceImpl;
@@ -42,6 +44,9 @@ class EmployeeServiceTest {
     private DepartmentRepository departmentRepository;
 
     @Mock
+    private EmployeeTypeRepository employeeTypeRepository;
+
+    @Mock
     private EmployeeMapper employeeMapper;
 
     @Mock
@@ -58,16 +63,19 @@ class EmployeeServiceTest {
                 .lastName("User")
                 .email("test@eems.com")
                 .departmentId(1L)
+                .employeeTypeId(1L)
                 .dateOfJoining(LocalDate.now())
                 .build();
 
         Department dept = Department.builder().id(1L).name("IT").build();
+        EmployeeType type = EmployeeType.builder().id(1L).name("Permanent").code("PERM").build();
         Employee entity = Employee.builder().id(1L).employeeCode("EMP100").build();
 
         when(employeeRepository.existsByEmployeeCode("EMP100")).thenReturn(false);
         when(employeeRepository.existsByEmail("test@eems.com")).thenReturn(false);
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(dept));
-        when(employeeMapper.toEntity(dto, dept)).thenReturn(entity);
+        when(employeeTypeRepository.findById(1L)).thenReturn(Optional.of(type));
+        when(employeeMapper.toEntity(dto, dept, type, null, null, null)).thenReturn(entity);
         when(employeeRepository.save(any())).thenReturn(entity);
         when(employeeMapper.toDTO(entity)).thenReturn(dto);
 

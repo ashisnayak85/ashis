@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getUsers, createUser, getRoles } from '../api/users';
+import { getUsers, createUser, getRoles, updateUserRole } from '../api/users';
 import { getAvailableForUser } from '../api/employees';
 import { Loading, ErrorBanner, SuccessBanner } from '../components/Feedback';
 
@@ -15,6 +15,12 @@ export default function Users() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+
+  // Inline "change role" state - which user row is being edited, and the
+  // role currently selected for it (only one row editable at a time).
+  const [editingRoleUserId, setEditingRoleUserId] = useState(null);
+  const [pendingRoleName, setPendingRoleName] = useState('');
+  const [savingRole, setSavingRole] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -34,22 +40,20 @@ export default function Users() {
 
   // Roles come straight from the DB rather than being hardcoded here, so the
   // dropdown can never send a roleName the backend doesn't actually have.
+  // Loaded on mount (not just when opening "New User") since the inline
+  // "change role" control on each row needs this list too.
   const loadRoles = useCallback(() => {
     getRoles()
-      .then((res) => {
-        const list = res.data || [];
-        setRoles(list);
-        setForm((f) => (f.roleName ? f : { ...f, roleName: list[0]?.name || '' }));
-      })
+      .then((res) => setRoles(res.data || []))
       .catch((err) => setError(err.message));
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadRoles(); }, [loadRoles]);
 
   function openForm() {
-    setForm(emptyForm);
+    setForm({ ...emptyForm, roleName: roles[0]?.name || '' });
     loadAvailableEmployees();
-    loadRoles();
     setShowForm(true);
   }
 
@@ -74,6 +78,27 @@ export default function Users() {
     }
   }
 
+  function startEditRole(u) {
+    setError('');
+    setEditingRoleUserId(u.id);
+    setPendingRoleName(u.roleName);
+  }
+
+  async function handleSaveRole(id) {
+    setError('');
+    setSavingRole(true);
+    try {
+      await updateUserRole(id, pendingRoleName);
+      setSuccess('Role updated');
+      setEditingRoleUserId(null);
+      load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingRole(false);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -87,18 +112,40 @@ export default function Users() {
       {loading ? <Loading /> : (
         <table className="data-table">
           <thead>
-            <tr><th>Username</th><th>Email</th><th>Role</th><th>Enabled</th></tr>
+            <tr><th>Username</th><th>Email</th><th>Role</th><th>Enabled</th><th></th></tr>
           </thead>
           <tbody>
             {users.length ? users.map((u) => (
               <tr key={u.id}>
                 <td>{u.username}</td>
                 <td>{u.email}</td>
-                <td>{u.roleName}</td>
+                <td>
+                  {editingRoleUserId === u.id ? (
+                    <select value={pendingRoleName} onChange={(e) => setPendingRoleName(e.target.value)}>
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.name}>{r.description || r.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    u.roleName
+                  )}
+                </td>
                 <td>{u.enabled ? 'Yes' : 'No'}</td>
+                <td className="row-actions">
+                  {editingRoleUserId === u.id ? (
+                    <>
+                      <button className="btn btn-link" disabled={savingRole} onClick={() => handleSaveRole(u.id)}>
+                        {savingRole ? 'Saving…' : 'Save'}
+                      </button>
+                      <button className="btn btn-link" onClick={() => setEditingRoleUserId(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <button className="btn btn-link" onClick={() => startEditRole(u)}>Change Role</button>
+                  )}
+                </td>
               </tr>
             )) : (
-              <tr><td colSpan={4} className="empty-row">No users found</td></tr>
+              <tr><td colSpan={5} className="empty-row">No users found</td></tr>
             )}
           </tbody>
         </table>
@@ -153,3 +200,4 @@ export default function Users() {
     </div>
   );
 }
+

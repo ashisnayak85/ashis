@@ -68,13 +68,17 @@ public class EmployeeMapper {
                 .profilePhoto(entity.getProfilePhoto())
                 .departmentId(entity.getDepartment() != null ? entity.getDepartment().getId() : null)
                 .departmentName(entity.getDepartment() != null ? entity.getDepartment().getName() : null)
+                .employeeTypeId(entity.getEmployeeType() != null ? entity.getEmployeeType().getId() : null)
+                .employeeTypeName(entity.getEmployeeType() != null ? entity.getEmployeeType().getName() : null)
                 .locationId(entity.getLocation() != null ? entity.getLocation().getId() : null)
                 .locationName(entity.getLocation() != null ? entity.getLocation().getName() : null)
+                .reportingManagerId(entity.getReportingManager() != null ? entity.getReportingManager().getId() : null)
+                .reportingManagerName(entity.getReportingManager() != null ? entity.getReportingManager().getFullName() : null)
                 .active(entity.getActive())
                 .build();
     }
 
-    public Employee toEntity(EmployeeDTO dto, Department department, Location location, Designation designation) {
+    public Employee toEntity(EmployeeDTO dto, Department department, EmployeeType employeeType, Location location, Designation designation, Employee reportingManager) {
         if (dto == null) return null;
         return Employee.builder()
                 .id(dto.getId())
@@ -116,13 +120,15 @@ public class EmployeeMapper {
                 .qualificationCertificateFileId(dto.getQualificationCertificateFileId())
                 .profilePhoto(dto.getProfilePhoto())
                 .department(department)
+                .employeeType(employeeType)
                 .location(location)
                 .designation(designation)
+                .reportingManager(reportingManager)
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
     }
 
-    public void updateEntity(Employee entity, EmployeeDTO dto, Department department, Location location, Designation designation) {
+    public void updateEntity(Employee entity, EmployeeDTO dto, Department department, EmployeeType employeeType, Location location, Designation designation, Employee reportingManager) {
         entity.setEmployeeCode(dto.getEmployeeCode());
         entity.setFirstName(dto.getFirstName());
         entity.setLastName(dto.getLastName());
@@ -163,8 +169,10 @@ public class EmployeeMapper {
         // populated the form with it), so this is safe either way.
         entity.setQualificationCertificateFileId(dto.getQualificationCertificateFileId());
         entity.setDepartment(department);
+        entity.setEmployeeType(employeeType);
         entity.setLocation(location);
         entity.setDesignation(designation);
+        entity.setReportingManager(reportingManager);
         if (dto.getActive() != null) entity.setActive(dto.getActive());
     }
 

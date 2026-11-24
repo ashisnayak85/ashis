@@ -75,6 +75,7 @@ export default function AllEmployeeList() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Department</th>
+                <th>Employee Type</th>
                 <th>Designation</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -87,6 +88,7 @@ export default function AllEmployeeList() {
                   <td>{emp.firstName} {emp.lastName}</td>
                   <td>{emp.email}</td>
                   <td>{emp.departmentName}</td>
+                  <td>{emp.employeeTypeName || '-'}</td>
                   <td>{emp.designationName || '-'}</td>
                   <td>
                     <span className={emp.active ? 'badge badge-success' : 'badge badge-muted'}>
@@ -98,7 +100,7 @@ export default function AllEmployeeList() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={7} className="empty-row">No employees found</td></tr>
+                <tr><td colSpan={8} className="empty-row">No employees found</td></tr>
               )}
             </tbody>
           </table>

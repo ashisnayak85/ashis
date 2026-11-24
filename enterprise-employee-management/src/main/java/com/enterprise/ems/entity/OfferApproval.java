@@ -1,0 +1,58 @@
+package com.enterprise.ems.entity;
+
+import com.enterprise.ems.constant.ApprovalStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.LocalDateTime;
+
+/*
+ * PURPOSE: One frozen approval stage of a job offer - same pattern as
+ * RequisitionApproval / ResignationApproval, for the OFFER workflow module.
+ * TABLE: offer_approval
+ */
+@Entity
+@Table(name = "offer_approval")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class OfferApproval {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "offer_id", nullable = false)
+    private Offer offer;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stage_id", nullable = false)
+    private WorkflowStage stage;
+
+    @Column(name = "stage_name", nullable = false, length = 100)
+    private String stageName;
+
+    @Column(name = "sequence_order", nullable = false)
+    private Integer sequenceOrder;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approver_employee_id")
+    private Employee approverEmployee;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private ApprovalStatus status = ApprovalStatus.PENDING;
+
+    @Column(name = "remarks", length = 500)
+    private String remarks;
+
+    @Column(name = "acted_at")
+    private LocalDateTime actedAt;
+}

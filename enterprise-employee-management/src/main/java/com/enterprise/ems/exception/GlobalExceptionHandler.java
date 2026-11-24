@@ -86,6 +86,40 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    // Thrown by service-level permission checks (e.g. HiringAccessService). Without this handler it
+    // would fall through to handleGeneric() below and be reported as a 500.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public Object handleAccessDenied(org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied: {}", ex.getMessage());
+        String message = ex.getMessage() != null && !ex.getMessage().equals("Access Denied")
+                ? ex.getMessage() : "You do not have permission to do this";
+        if (isApiRequest(request)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(message));
+        }
+        return new ModelAndView("error/error").addObject("message", message);
+    }
+
+    // Entities with @Version (hiring module): somebody else saved a change first.
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public Object handleOptimisticLock(org.springframework.dao.OptimisticLockingFailureException ex, HttpServletRequest request) {
+        log.warn("Optimistic lock conflict: {}", ex.getMessage());
+        String message = "Someone else changed this record while you were working on it. Please refresh and try again.";
+        if (isApiRequest(request)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
+        }
+        return new ModelAndView("error/error").addObject("message", message);
+    }
+
+    // Uploads larger than spring.servlet.multipart.max-file-size.
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public Object handleUploadTooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        String message = "The file is too large (maximum 5 MB)";
+        if (isApiRequest(request)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(message));
+        }
+        return new ModelAndView("error/error").addObject("message", message);
+    }
+
     @ExceptionHandler(Exception.class)
     public Object handleGeneric(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error", ex);

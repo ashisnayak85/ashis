@@ -7,6 +7,11 @@ public interface UserService {
 
     UserDTO createUser(UserDTO dto);
 
+    // Replaces an existing user's role (single-role model, same as
+    // createUser/getAllUsers) - lets an admin change access after the
+    // account already exists, not just at creation time.
+    UserDTO updateRole(Long userId, String roleName);
+
     List<UserDTO> getAllUsers();
 
     void toggleUserStatus(Long id);

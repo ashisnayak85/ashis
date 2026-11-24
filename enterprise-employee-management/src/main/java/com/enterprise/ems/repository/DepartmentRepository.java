@@ -14,4 +14,9 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     boolean existsByName(String name);
 
     boolean existsByCode(String code);
+
+    // Resignation no-dues clearance: every active department gets a
+    // clearance row when a resignation enters CLEARANCE_PENDING - see
+    // ResignationServiceImpl.enterClearance().
+    java.util.List<Department> findByActiveTrue();
 }

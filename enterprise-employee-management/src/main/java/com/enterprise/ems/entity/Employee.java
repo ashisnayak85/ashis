@@ -122,6 +122,10 @@ public class Employee {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private Department department;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_type_id")
+    private EmployeeType employeeType;
 
     // Replaces the old free-text "designation" column - now a managed lookup
     // table (same pattern as Department) so job titles stay consistent.
@@ -139,6 +143,15 @@ public class Employee {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    // Added for resignation approval routing (REPORTING_MANAGER stage type -
+    // see WorkflowStage). Self-referencing, nullable so existing
+    // rows and top-of-org employees don't break. Not used anywhere else yet,
+    // but deliberately generic (not resignation-specific) since org-chart /
+    // leave-approval-by-manager are natural future consumers of this too.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reporting_manager_id")
+    private Employee reportingManager;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     @Builder.Default

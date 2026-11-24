@@ -21,4 +21,8 @@ public interface TicketMasterRepository extends JpaRepository<TicketMaster, Long
     @Query("SELECT t FROM TicketMaster t WHERE t.status = 'IN_PROGRESS' AND t.resolutionBreached = false " +
            "AND t.acceptedAt IS NOT NULL")
     List<TicketMaster> findInProgressForResolutionCheck();
+
+    // Resignation final-approval gate: is this employee still holding any
+    // open/in-progress ticket work? See ResignationServiceImpl.finalApprove().
+    long countByAssignedToIdAndStatusIn(Long assignedToId, List<String> statuses);
 }

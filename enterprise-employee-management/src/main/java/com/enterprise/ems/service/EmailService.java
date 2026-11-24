@@ -11,4 +11,7 @@ public interface EmailService {
     void sendPasswordResetEmail(String to, String resetLink);
 
     void sendLeaveApprovalEmail(String to, String employeeName, String status);
+
+    // Hiring module: generic plain-text notification (interview invites, approval requests, offers).
+    void sendHiringEmail(String to, String subject, String body);
 }

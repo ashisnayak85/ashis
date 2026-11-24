@@ -2,23 +2,45 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from './Footer';
+import useHiringMe from './hiring/useHiringMe';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', initial: 'D' },
-  { to: '/employees', label: 'Employees', initial: 'E', roles: ['ADMIN', 'MANAGER'] },
-  { to: '/all-employees', label: 'All Employees', initial: 'A', roles: ['ADMIN', 'MANAGER'] },
   { to: '/departments', label: 'Departments', initial: 'P', roles: ['ADMIN', 'MANAGER'] },
   { to: '/designations', label: 'Designations', initial: 'G', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/employee-type', label: 'Employee Type', initial: 'ET', roles: ['ADMIN', 'MANAGER'] },
   { to: '/locations', label: 'Locations', initial: 'L', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/employees', label: 'Employees', initial: 'E', roles: ['ADMIN', 'MANAGER'] },
+  { to: '/all-employees', label: 'All Employees', initial: 'A', roles: ['ADMIN', 'MANAGER'] },
   { to: '/attendance', label: 'Attendance', initial: 'T' },
   { to: '/leaves', label: 'Leave', initial: 'L' },
+  { to: '/resignations', label: 'Resignation', initial: 'R' },
+  // Hiring: `hiring` says WHEN to show it (see hiringVisible); the backend still enforces access.
+  { to: '/hiring', label: 'Hiring Dashboard', initial: 'HD', hiring: 'staff', end: true },
+  { to: '/hiring/requisitions', label: 'Requisitions', initial: 'RQ', hiring: 'requisitions' },
+  { to: '/hiring/candidates', label: 'Candidates', initial: 'CA', hiring: 'staff' },
+  { to: '/hiring/offers', label: 'Offers', initial: 'OF', hiring: 'staff' },
+  { to: '/hiring/interviews', label: 'My Interviews', initial: 'MI', hiring: 'all' },
+  { to: '/hiring/approvals', label: 'Hiring Approvals', initial: 'HA', hiring: 'approvals' },
   { to: '/tickets', label: 'Tickets', initial: 'K' },
   { to: '/ticket-setup', label: 'Ticket Setup', initial: 'S', roles: ['ADMIN', 'MANAGER'] },
   { to: '/admin/users', label: 'Users', initial: 'U', roles: ['ADMIN'] },
+  { to: '/admin/workflow-setup', label: 'Workflow Setup', initial: 'W', roles: ['ADMIN'] },
 ];
+
+function hiringVisible(rule, me) {
+  if (!me) return false;
+  switch (rule) {
+    case 'staff': return me.staff;
+    case 'requisitions': return me.canRaiseRequisition || me.pendingApprovals > 0;
+    case 'approvals': return me.staff || me.canRaiseRequisition || me.pendingApprovals > 0;
+    default: return true; // 'all'
+  }
+}
 
 export default function Layout() {
   const { user, logout, hasAnyRole } = useAuth();
+  const hiringMe = useHiringMe();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(false);
@@ -151,10 +173,13 @@ export default function Layout() {
         )}
         <aside className={`sidebar${sidebarPinned ? ' sidebar-pinned' : ''}${mobileNavOpen ? ' sidebar-mobile-open' : ''}`}>
           <div className="sidebar-links">
-            {NAV_ITEMS.filter((item) => !item.roles || hasAnyRole(item.roles)).map((item) => (
+            {NAV_ITEMS.filter((item) => (item.hiring
+              ? hiringVisible(item.hiring, hiringMe)
+              : !item.roles || hasAnyRole(item.roles))).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.end}
                 className="sidebar-link"
                 title={item.label}
                 onClick={() => setMobileNavOpen(false)}

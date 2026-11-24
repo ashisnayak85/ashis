@@ -124,6 +124,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO updateRole(Long userId, String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
+
+        // Single-role model, same as createUser - replace rather than add, so
+        // getAllUsers()/toDTO's findFirst() always reflects the one true role.
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        user.setRoles(roles);
+        User saved = userRepository.save(user);
+
+        return UserDTO.builder()
+                .id(saved.getId())
+                .employeeId(saved.getEmployee() != null ? saved.getEmployee().getId() : null)
+                .username(saved.getUsername())
+                .email(saved.getEmail())
+                .roleName(role.getName())
+                .enabled(saved.getEnabled())
+                .build();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()

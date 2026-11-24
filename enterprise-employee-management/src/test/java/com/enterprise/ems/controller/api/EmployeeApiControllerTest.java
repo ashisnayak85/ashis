@@ -57,7 +57,7 @@ class EmployeeApiControllerTest {
     void createEmployee_ReturnsCreated() throws Exception {
         EmployeeDTO dto = EmployeeDTO.builder()
                 .employeeCode("EMP100").firstName("Test").lastName("User")
-                .email("test@eems.com").departmentId(1L).dateOfJoining(java.time.LocalDate.now())
+                .email("test@eems.com").departmentId(1L).employeeTypeId(1L).dateOfJoining(java.time.LocalDate.now())
                 .build();
 
         when(employeeService.create(any())).thenReturn(dto);

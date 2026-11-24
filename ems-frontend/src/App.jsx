@@ -12,12 +12,25 @@ import AllEmployeeList from './pages/AllEmployeeList';
 import Departments from './pages/Departments';
 import Designations from './pages/Designations';
 import Locations from './pages/Locations';
+import EmployeeTypes from './pages/EmployeeTypes'
 import Attendance from './pages/Attendance';
 import Leaves from './pages/Leaves';
+import Resignations from './pages/Resignations';
+import HiringDashboard from './pages/hiring/HiringDashboard';
+import Requisitions from './pages/hiring/Requisitions';
+import RequisitionDetail from './pages/hiring/RequisitionDetail';
+import Candidates from './pages/hiring/Candidates';
+import CandidateDetail from './pages/hiring/CandidateDetail';
+import ApplicationDetail from './pages/hiring/ApplicationDetail';
+import MyInterviews from './pages/hiring/MyInterviews';
+import HiringApprovals from './pages/hiring/HiringApprovals';
+import Offers from './pages/hiring/Offers';
+import OfferDetail from './pages/hiring/OfferDetail';
 import Tickets from './pages/Tickets';
 import TicketDetail from './pages/TicketDetail';
 import TicketSetup from './pages/TicketSetup';
 import Users from './pages/Users';
+import WorkflowSetup from './pages/WorkflowSetup';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
@@ -40,9 +53,24 @@ export default function App() {
                 <Route path="/departments" element={<Departments />} />
                 <Route path="/designations" element={<Designations />} />
                 <Route path="/locations" element={<Locations />} />
+                <Route path="/employee-type" element={<EmployeeTypes />} />
               </Route>
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/leaves" element={<Leaves />} />
+              <Route path="/resignations" element={<Resignations />} />
+              {/* Hiring: no role gate here on purpose - access depends on the RECORD (owner / approver /
+                  recruiter / interviewer), so the backend (HiringAccessService) decides, and the sidebar
+                  only shows what the signed-in person can use. */}
+              <Route path="/hiring" element={<HiringDashboard />} />
+              <Route path="/hiring/requisitions" element={<Requisitions />} />
+              <Route path="/hiring/requisitions/:id" element={<RequisitionDetail />} />
+              <Route path="/hiring/candidates" element={<Candidates />} />
+              <Route path="/hiring/candidates/:id" element={<CandidateDetail />} />
+              <Route path="/hiring/applications/:id" element={<ApplicationDetail />} />
+              <Route path="/hiring/interviews" element={<MyInterviews />} />
+              <Route path="/hiring/approvals" element={<HiringApprovals />} />
+              <Route path="/hiring/offers" element={<Offers />} />
+              <Route path="/hiring/offers/:id" element={<OfferDetail />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route element={<ProtectedRoute roles={['ADMIN', 'MANAGER']} />}>
@@ -51,6 +79,7 @@ export default function App() {
               <Route path="/profile" element={<Profile />} />
               <Route element={<ProtectedRoute role="ADMIN" />}>
                 <Route path="/admin/users" element={<Users />} />
+                <Route path="/admin/workflow-setup" element={<WorkflowSetup />} />
               </Route>
             </Route>
           </Route>

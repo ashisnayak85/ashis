@@ -124,4 +124,25 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send leave email", e);
         }
     }
+
+    @Override
+    @Async
+    public void sendHiringEmail(String to, String subject, String body) {
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            log.warn("Mail is not configured (no active profile with spring.mail.host) - skipping hiring email to {}", to);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+            log.debug("Hiring email sent to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send hiring email to {}", to, e);
+        }
+    }
 }

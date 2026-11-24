@@ -11,3 +11,7 @@ export function createUser(dto) {
 export function getRoles() {
   return api.get('/api/admin/users/roles');
 }
+
+export function updateUserRole(id, roleName) {
+  return api.put(`/api/admin/users/${id}/role`, { roleName });
+}

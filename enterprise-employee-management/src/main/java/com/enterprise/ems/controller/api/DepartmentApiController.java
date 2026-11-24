@@ -463,6 +463,14 @@ class UserApiController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User created", userService.createUser(dto)));
     }
+
+    public record UpdateRoleRequest(String roleName) {}
+
+    @PutMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserDTO>> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest body) {
+        return ResponseEntity.ok(ApiResponse.success("Role updated", userService.updateRole(id, body.roleName())));
+    }
 }
 
 @RestController

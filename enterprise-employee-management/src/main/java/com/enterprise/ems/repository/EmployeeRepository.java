@@ -75,4 +75,19 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     long countByDesignationId(Long designationId);
 
     long countByLocationId(Long locationId);
+
+    // --- Resignation approval routing (ResignationServiceImpl.resolveApprover) ---
+
+    // ROLE_IN_DEPARTMENT resolution: an active employee, linked to a user
+    // holding the given role, within the given department. Ordered by id so
+    // resolution is deterministic if more than one person qualifies.
+    java.util.List<Employee> findByActiveTrueAndDepartmentIdAndUser_Roles_NameOrderByIdAsc(Long departmentId, String roleName);
+
+    // SPECIFIC_ROLE resolution: same as above but department-agnostic
+    // (e.g. a single company-wide HR Head role).
+    java.util.List<Employee> findByActiveTrueAndUser_Roles_NameOrderByIdAsc(String roleName);
+
+    // Hiring: all employee codes starting with a prefix - used by EmployeeCodeGenerator to find the next number.
+    @Query("SELECT e.employeeCode FROM Employee e WHERE e.employeeCode LIKE CONCAT(:prefix, '%')")
+    List<String> findEmployeeCodesByPrefix(@Param("prefix") String prefix);
 }

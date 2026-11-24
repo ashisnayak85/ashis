@@ -110,6 +110,7 @@ export default function EmployeeList() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Department</th>
+                <th>Employee Type</th>
                 <th>Location</th>
                 <th>Designation</th>
                 <th>Active</th>
@@ -123,6 +124,7 @@ export default function EmployeeList() {
                   <td>{emp.firstName} {emp.lastName}</td>
                   <td>{emp.email}</td>
                   <td>{emp.departmentName}</td>
+                  <td>{emp.employeeTypeName || '-'}</td>
                   <td>{emp.locationName || '-'}</td>
                   <td>{emp.designationName || '-'}</td>
                   <td>{emp.active ? 'Yes' : 'No'}</td>
@@ -132,7 +134,7 @@ export default function EmployeeList() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={8} className="empty-row">No employees found</td></tr>
+                <tr><td colSpan={9} className="empty-row">No employees found</td></tr>
               )}
             </tbody>
           </table>
