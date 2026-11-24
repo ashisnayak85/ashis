@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Departments - EEMS')}"></head>
+<body>
+<nav th:replace="~{layout/fragments :: navbar}"></nav>
+<div class="container mt-4">
+    <h2>Department Management</h2>
+    <div id="deptList" class="row mt-3"></div>
+</div>
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+<script>
+$(document).ready(function() {
+    $.get('/api/departments', function(r) {
+        if (r.success) r.data.forEach(d => {
+            $('#deptList').append(`<div class="col-md-4 mb-3"><div class="card"><div class="card-body">
+                <h5>${d.name} (${d.code})</h5><p>${d.description||''}</p>
+                <span class="badge bg-primary">${d.employeeCount} employees</span></div></div></div>`);
+        });
+    });
+});
+</script>
+</body>
+</html>

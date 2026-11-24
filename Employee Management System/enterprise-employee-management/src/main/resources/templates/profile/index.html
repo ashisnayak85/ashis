@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Profile - EEMS')}"></head>
+<body>
+<nav th:replace="~{layout/fragments :: navbar}"></nav>
+<div class="container mt-4">
+    <h2>My Profile</h2>
+    <div class="card mt-3"><div class="card-body">
+        <p><strong>Username:</strong> <span th:text="${username}"></span></p>
+        <p><strong>Roles:</strong> <span th:each="role : ${roles}" th:text="${role.authority}" class="badge bg-info me-1"></span></p>
+    </div></div>
+</div>
+<footer th:replace="~{layout/fragments :: footer}"></footer>
+</body>
+</html>

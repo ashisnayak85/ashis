@@ -1,0 +1,8 @@
+/* EEMS Custom Styles */
+body { min-height: 100vh; }
+.card { border-radius: 10px; }
+.table th { font-weight: 600; }
+.pagination .page-link { cursor: pointer; }
+.modal-header { background-color: #0d6efd; color: white; }
+.modal-header .btn-close { filter: invert(1); }
+.invalid-feedback { display: block; }

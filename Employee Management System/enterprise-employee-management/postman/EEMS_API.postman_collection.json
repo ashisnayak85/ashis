@@ -1,0 +1,127 @@
+{
+  "info": {
+    "name": "EEMS - Employee Management API",
+    "description": "REST API collection for Enterprise Employee Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "Get All Employees (Paginated)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees?page=0&size=10"
+          }
+        },
+		{
+		         "name": "Get All Employees (Paginated active+resigned)",
+		         "request": {
+		           "method": "GET",
+		           "url": "{{baseUrl}}/api/allEmployees?page=0&size=10"
+		         }
+		       },
+        {
+          "name": "Search Employees",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees?search=john&page=0&size=10"
+          }
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employees/1"
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeCode\": \"EMP100\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Brown\",\n  \"email\": \"alice@eems.com\",\n  \"mobile\": \"9876543219\",\n  \"departmentId\": 1,\n  \"dateOfJoining\": \"2024-01-15\",\n  \"designation\": \"Developer\",\n  \"salary\": 70000\n}"
+            },
+            "url": "{{baseUrl}}/api/employees"
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeCode\": \"EMP100\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Brown-Updated\",\n  \"email\": \"alice@eems.com\",\n  \"mobile\": \"9876543219\",\n  \"departmentId\": 1,\n  \"dateOfJoining\": \"2024-01-15\",\n  \"designation\": \"Senior Developer\",\n  \"salary\": 80000\n}"
+            },
+            "url": "{{baseUrl}}/api/employees/1"
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/employees/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        {
+          "name": "Get All Departments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/departments" }
+        },
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marketing\",\n  \"code\": \"MKT\",\n  \"description\": \"Marketing Department\"\n}"
+            },
+            "url": "{{baseUrl}}/api/departments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Stats",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/stats" }
+        }
+      ]
+    },
+    {
+      "name": "Leaves",
+      "item": [
+        {
+          "name": "Apply Leave",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": 1,\n  \"leaveType\": \"CASUAL\",\n  \"startDate\": \"2024-07-01\",\n  \"endDate\": \"2024-07-02\",\n  \"reason\": \"Personal\"\n}"
+            },
+            "url": "{{baseUrl}}/api/leaves"
+          }
+        },
+        {
+          "name": "Get Pending Leaves",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/leaves/pending" }
+        }
+      ]
+    }
+  ]
+}

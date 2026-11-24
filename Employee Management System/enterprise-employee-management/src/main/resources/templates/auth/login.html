@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/fragments :: head('Login - EEMS')}"></head>
+<body class="bg-light">
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h3 class="text-center mb-4"><i class="bi bi-building"></i> EEMS Login</h3>
+
+                    <div th:if="${param.error}" class="alert alert-danger">Invalid username or password</div>
+                    <div th:if="${param.logout}" class="alert alert-success">You have been logged out</div>
+                    <div th:if="${param.expired}" class="alert alert-warning">Session expired. Please login again.</div>
+
+                    <!-- Spring Security form login - POST to /login -->
+                    <form th:action="@{/login}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" required autofocus/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required/>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+
+                    <div class="mt-3 text-muted small text-center">
+                        <p>Demo: admin / admin123</p>
+                        <p>Demo: manager / manager123</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

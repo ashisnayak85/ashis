@@ -1,0 +1,556 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+}
+
+/* ---------- Layout / Navbar ---------- */
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  height: 56px;
+  background: #1e293b;
+  color: white;
+  flex-shrink: 0;
+}
+.navbar-brand { font-weight: 700; font-size: 1.1rem; }
+.navbar-spacer { flex: 1; }
+.navbar-user { position: relative; display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+.navbar-username { color: #e2e8f0; font-weight: 600; font-size: 0.88rem; }
+
+/* ---------- Sidebar toggle (hamburger) ---------- */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-toggle:hover { background: #334155; color: white; }
+.sidebar-toggle-active { background: #2563eb; color: white; }
+.sidebar-toggle-active:hover { background: #1d4ed8; }
+
+/* ---------- Profile trigger + popup ---------- */
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #334155;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.profile-trigger:hover { background: #475569; }
+
+.profile-popup {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 260px;
+  background: white;
+  color: #1f2937;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  z-index: 60;
+  overflow: hidden;
+}
+.profile-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+.profile-popup-name { font-weight: 600; font-size: 0.95rem; }
+.profile-popup-roles { color: #64748b; font-size: 0.8rem; margin-top: 2px; }
+.profile-popup-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.profile-popup-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.85rem; }
+.profile-popup-label { color: #64748b; }
+.profile-popup-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ---------- Sidebar (collapsible: icon rail by default, expands on hover; pinned open via hamburger) ---------- */
+.app-body { display: flex; flex: 1; min-height: 0; position: relative; }
+
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 12px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+.app-footer-version { font-variant-numeric: tabular-nums; }
+
+.sidebar {
+  width: 64px;
+  flex-shrink: 0;
+  background: #0f172a;
+  padding: 16px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.2s ease;
+  position: relative;
+  z-index: 40;
+}
+/* Hover expands temporarily when not pinned */
+.sidebar:hover { width: 220px; }
+/* Hamburger click pins it open regardless of hover */
+.sidebar.sidebar-pinned { width: 220px; }
+
+.sidebar-links { display: flex; flex-direction: column; gap: 2px; }
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-left: 3px solid transparent;
+}
+.sidebar-link.active, .sidebar-link:hover {
+  color: white;
+  background: #1e293b;
+  border-left-color: #60a5fa;
+}
+
+.sidebar-link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: #1e293b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.sidebar-link.active .sidebar-link-icon,
+.sidebar-link:hover .sidebar-link-icon { background: #2563eb; }
+
+.sidebar-link-label {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.sidebar:hover .sidebar-link-label,
+.sidebar.sidebar-pinned .sidebar-link-label { opacity: 1; }
+
+.page-content { flex: 1; padding: 24px; overflow-y: auto; min-width: 0; }
+
+/* ---------- Buttons ---------- */
+.btn { border: none; border-radius: 6px; padding: 8px 14px; font-size: 0.9rem; cursor: pointer; }
+.btn-primary { background: #2563eb; color: white; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+.btn-link { background: none; color: #2563eb; padding: 4px 8px; }
+.btn-link:hover { text-decoration: underline; }
+.btn-danger { color: #dc2626; }
+.btn.btn-danger { background: #dc2626; color: white; }
+.btn.btn-success { background: #02cd31; color: white; }
+.btn-secondary { background: white; color: #334155; border: 1px solid #d1d5db; }
+.btn-secondary:hover { background: #f8fafc; }
+.btn-secondary:disabled { color: #94a3b8; cursor: not-allowed; }
+
+/* Export-to-Excel action - Excel's own green, so the button reads as "download
+   a spreadsheet" at a glance. Kept distinct from .btn-success (used for
+   approve/positive actions elsewhere) so the two don't get visually confused. */
+.btn-excel { background: #1d6f42; color: white; display: inline-flex; align-items: center; gap: 6px; }
+.btn-excel:hover { background: #16572f; }
+.btn-excel:disabled { background: #86ab9b; cursor: not-allowed; }
+.btn-excel svg { flex-shrink: 0; }
+
+/* Groups multiple action buttons together on the right side of a page-header
+   or panel-header (e.g. "Export to Excel" next to "+ New Employee"). */
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- Page header ---------- */
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+/* ---------- Tables ---------- */
+.data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.data-table th, .data-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+.data-table th { background: #f8fafc; font-weight: 600; color: #475569; }
+.empty-row { text-align: center; color: #94a3b8; padding: 24px; }
+.row-actions { display: flex; gap: 8px; }
+
+/* ---------- Search / pagination ---------- */
+.search-input { width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+.pagination { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 0.9rem; }
+.pagination button { padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------- Stat cards ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.stat-card { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.stat-label { color: #64748b; font-size: 0.85rem; }
+.stat-value { font-size: 2rem; font-weight: 700; margin-top: 4px; }
+
+/* ---------- Forms / modal ---------- */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal-card { background: white; border-radius: 10px; padding: 24px; width: 680px; max-width: 92vw; max-height: 88vh; overflow-y: auto; }
+.modal-card-small { width: 380px; }
+.modal-card-wide { width: 880px; }
+/* minmax(0, 1fr) instead of a bare 1fr - a bare 1fr track refuses to shrink
+   below its content's min-content width (effectively minmax(auto, 1fr)),
+   which lets a wide <select> (e.g. "Escalation contact") force the track -
+   and the whole form - wider than its container and overflow into whatever
+   sits next to it. minmax(0, 1fr) lets the track compress properly instead. */
+.form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 16px; margin-top: 12px; }
+.form-grid .span-2 { grid-column: span 2; }
+.edit-attendance-form { margin: 12px 0; border: 1px solid #cbd5e1; }
+
+/* Field-level validation - pairs with EmployeeFormModal's fieldErrors map */
+input.input-error, select.input-error {
+  border-color: #dc2626;
+  outline: none;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+.field-error {
+  display: block;
+  color: #991b1b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+fieldset { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px 18px; margin-top: 16px; }
+fieldset:first-of-type { margin-top: 12px; }
+legend { padding: 0 6px; font-size: 0.85rem; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 14px; }
+legend .inline-checkbox { font-weight: 400; font-size: 0.8rem; color: #64748b; }
+
+.file-upload-label { margin-top: 14px; }
+.file-chip { font-size: 0.8rem; color: #475569; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; width: fit-content; }
+.file-chip a { color: #2563eb; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #374151; }
+.checkbox-label { flex-direction: row; align-items: center; gap: 8px; }
+input, select, textarea {
+  padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; font-family: inherit;
+}
+textarea { min-height: 70px; resize: vertical; }
+input:disabled, select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+/* ---------- Card panels (attendance/leave two-column layout) ---------- */
+.two-col { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+.card-form, .card-panel { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 12px; }
+
+/* Panel title + action button (e.g. "Leave Requests" + "Export to Excel") */
+.panel-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.panel-header h2 { margin: 0; }
+
+/* ---------- Resignation module ---------- */
+.stacked-panel { margin-top: 20px; }
+.resignation-detail { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid #e2e8f0; margin-top: 14px; padding-top: 14px; }
+.detail-header { display: flex; flex-direction: column; gap: 4px; }
+.approval-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.approval-step { border-left: 3px solid #cbd5e1; padding: 6px 12px; border-radius: 4px; background: #f8fafc; }
+.approval-step.approval-approved { border-left-color: #16a34a; }
+.approval-step.approval-rejected { border-left-color: #dc2626; }
+.approval-step.approval-skipped { border-left-color: #94a3b8; opacity: 0.75; }
+.approval-step.approval-pending { border-left-color: #d97706; }
+.muted-text { color: #64748b; font-size: 0.85rem; }
+
+/* ---------- Filter bar (leave search: status/date-range/employee) ---------- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding-bottom: 4px;
+}
+.filter-bar label { flex: 1 1 130px; min-width: 130px; }
+.filter-bar input, .filter-bar select { width: 100%; }
+.filter-clear { flex: 0 0 auto; white-space: nowrap; padding-bottom: 8px; }
+
+/* Table wrapper for horizontal scroll on narrow viewports without affecting
+   the rest of the card-panel layout. */
+.data-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---------- Badges / banners ---------- */
+.badge { padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-muted { background: #f1f5f9; color: #64748b; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-info { background: #dbeafe; color: #1e40af; }
+
+.banner { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; }
+.banner-error { background: #fee2e2; color: #991b1b; }
+.banner-success { background: #dcfce7; color: #166534; }
+.banner-error-list { margin: 0; padding-left: 18px; }
+.banner-error-list li { margin: 2px 0; }
+
+.page-loading { padding: 40px; text-align: center; color: #64748b; }
+
+/* ---------- Auth ---------- */
+.auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.auth-card { background: white; padding: 32px; border-radius: 12px; width: 360px; max-width: 90vw; box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 14px; }
+.auth-card h1 { font-size: 1.3rem; margin: 0; }
+.auth-subtitle { color: #64748b; margin: 0 0 4px 0; font-size: 0.9rem; }
+.auth-secondary-link { text-align: center; font-size: 0.85rem; color: #2563eb; text-decoration: none; }
+.auth-secondary-link:hover { text-decoration: underline; }
+
+/* ---------- Face capture (self-attendance verification) ---------- */
+.face-capture { display: flex; flex-direction: column; gap: 10px; }
+.face-capture h3 { margin: 0; font-size: 1.05rem; }
+.face-capture-frame {
+  width: 260px; height: 260px; max-width: 100%; border-radius: 12px; overflow: hidden;
+  background: #0f172a; display: flex; align-items: center; justify-content: center;
+  border: 2px solid #e2e8f0;
+}
+.face-capture-video { width: 100%; height: 100%; object-fit: cover; }
+/* Only mirror the LIVE preview so it feels like a mirror to look into - the
+   captured still photo (an <img>, no mirrored class) is left unmirrored,
+   since that's the actual orientation sent to the server. */
+.face-capture-mirrored { transform: scaleX(-1); }
+.face-capture-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.face-status-badge { font-size: 0.8rem; margin-left: 8px; }
+
+/* =====================================================================
+   Responsive layout
+   Breakpoints: >900px desktop/tablet-landscape, 601-900px tablet/small
+   laptop, <=600px phones.
+   ===================================================================== */
+
+/* Sidebar overlay backdrop shown only while the mobile drawer is open */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 39; /* just below the sidebar (z-index 40) */
+}
+
+@media (min-width: 901px) {
+  /* Never show the mobile drawer chrome on desktop, even if state is stale */
+  .sidebar-overlay { display: none; }
+}
+
+/* ---------- Tablet & below ---------- */
+@media (max-width: 900px) {
+  .navbar { padding: 0 12px; gap: 12px; }
+  .navbar-brand { font-size: 1rem; }
+  .page-content { padding: 16px; }
+
+  /* Sidebar becomes an off-canvas drawer instead of a hover-expand rail */
+  .sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    width: 220px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 40;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+  .sidebar:hover { width: 220px; } /* no hover-expand behaviour on touch */
+  .sidebar-link-label { opacity: 1; } /* labels always visible in the drawer */
+  .sidebar.sidebar-mobile-open { transform: translateX(0); }
+
+  .two-col { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span-2 { grid-column: span 1; }
+
+  .modal-card { width: 92vw; padding: 18px; }
+  .modal-card-wide { width: 92vw; }
+
+  /* Tables scroll horizontally (inside .data-table-scroll where present)
+     rather than squashing columns unreadably */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .data-table th, .data-table td { padding: 8px 10px; }
+  /* Table already scrolls itself via display:block above; the wrapper just
+     needs to stop clipping it and let the inner scroll do the work. */
+  .data-table-scroll .data-table { min-width: 640px; }
+
+  .filter-bar { gap: 10px; }
+  .filter-bar label { flex: 1 1 45%; min-width: 140px; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .navbar { height: 52px; gap: 8px; }
+  .navbar-username { display: none; } /* avatar + popup still show identity */
+  .sidebar { top: 52px; }
+
+  .page-header { flex-direction: column; align-items: stretch; gap: 10px; }
+  .page-header h1 { font-size: 1.2rem; }
+  .page-header .btn { width: 100%; }
+  .header-actions { flex-direction: column; align-items: stretch; }
+
+  .panel-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .panel-header .btn { width: 100%; }
+
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 1.5rem; }
+
+  .modal-backdrop { padding: 12px; align-items: flex-end; }
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; }
+
+  .row-actions { flex-direction: column; gap: 4px; align-items: flex-start; }
+
+  .pagination { flex-wrap: wrap; justify-content: center; }
+
+  /* Filter bar stacks to one control per row on phones; "Clear filters"
+     becomes a full-width tap target instead of a small inline link. */
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-bar label { flex: 1 1 auto; min-width: 0; }
+  .filter-clear { padding-bottom: 0; align-self: flex-start; }
+
+  .auth-card { padding: 22px; width: 100%; }
+  .profile-popup { width: min(280px, 90vw); right: -8px; }
+
+  .face-capture-frame { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+}
+
+/* ---------- Tickets ---------- */
+
+/* Small red dot next to a ticket row/title with unseen conversation activity. */
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  margin-left: 6px;
+}
+
+/* Banner shown on the ticket detail page when an SLA clock has been breached. */
+.sla-breach-banner {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.ticket-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: #64748b; font-size: 0.9rem; margin: 6px 0 16px; }
+.ticket-meta strong { color: #334155; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+.plain-list { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-direction: column; gap: 6px; }
+.plain-list li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+
+.ticket-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+/* Unified conversation timeline - plain replies and status-change events
+   (claim/resolve/reject/transfer/escalate/accept/close/SLA breach) all
+   render in one scrolling thread, chat-app style. */
+.conversation-thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+.conversation-entry-reply {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  max-width: 80%;
+}
+.conversation-entry-reply.mine { align-self: flex-end; background: #eff6ff; border-color: #bfdbfe; }
+
+.conversation-entry-system {
+  align-self: center;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  text-align: center;
+  max-width: 90%;
+}
+.conversation-entry-system.entry-reject,
+.conversation-entry-system.entry-sla_breach { background: #fee2e2; color: #991b1b; }
+.conversation-entry-system.entry-resolve,
+.conversation-entry-system.entry-accept { background: #dcfce7; color: #166534; }
+.conversation-entry-system.entry-escalate { background: #fef3c7; color: #92400e; }
+
+.conversation-entry-author { font-weight: 600; font-size: 0.85rem; margin-bottom: 2px; }
+.conversation-entry-time { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
+
+.reply-box { display: flex; gap: 8px; align-items: flex-start; }
+.reply-box textarea { flex: 1; }
+
+/* Resignation Workflow Setup - tab strip (Workflow Roles / Approval Chain / Employee Access) */
+.tab-strip { display: flex; gap: 4px; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.25rem; }
+.tab-btn {
+  background: none; border: none; padding: 10px 16px; font-size: 0.9rem; font-weight: 500;
+  color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab-btn:hover { color: #334155; }
+.tab-btn-active { color: #2563eb; border-bottom-color: #2563eb; }
+.hint-text { color: #64748b; font-size: 0.85rem; margin: -0.5rem 0 1rem; }
+
+/* ---------------- Hiring module ---------------- */
+.picker { position: relative; }
+.picker-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; }
+.picker-list { position: absolute; z-index: 20; left: 0; right: 0; margin: 2px 0 0; padding: 4px; list-style: none; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); max-height: 220px; overflow-y: auto; }
+.picker-list button { width: 100%; text-align: left; background: none; border: 0; padding: 7px 8px; cursor: pointer; border-radius: 4px; font: inherit; }
+.picker-list button:hover { background: #eef2ff; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip-remove { background: none; border: 0; cursor: pointer; margin-left: 6px; font-size: 15px; line-height: 1; color: #64748b; }
+.inline-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 48px; gap: 10px; align-items: center; margin: 5px 0; font-size: 14px; }
+.bar-track { background: #e2e8f0; border-radius: 4px; height: 12px; overflow: hidden; }
+.bar-fill { background: #4f46e5; height: 100%; min-width: 2px; }
+.kv-grid { display: grid; grid-template-columns: 170px 1fr; gap: 6px 14px; margin: 0; }
+.kv-grid dt { color: #64748b; }
+.kv-grid dd { margin: 0; }
+.feedback-box { border-left: 3px solid #cbd5e1; padding: 6px 12px; margin: 8px 0; background: #f8fafc; border-radius: 4px; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #f1f5f9; }
+@media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr; } .bar-row { grid-template-columns: 100px 1fr 40px; } }
