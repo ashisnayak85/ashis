@@ -1,0 +1,111 @@
+================================================================================
+db_scripts/query_log.txt
+================================================================================
+Running, dated log of every manual SQL change made to this project's database.
+
+Why this file exists: the app uses spring.jpa.hibernate.ddl-auto=update, which
+auto-adds most new columns/tables on startup but silently fails for a NOT NULL
+column added to a table that already has rows (MySQL has nothing to backfill
+existing rows with). Anything that falls into that category - or any other
+change Hibernate can't safely automate (drops, renames, backfills) - gets
+written here and run by hand.
+
+How to use this file:
+  - Entries are in date order, oldest first. Run any you haven't already run,
+    top to bottom.
+  - Each entry says what it's for and whether it's safe to re-run.
+  - When new schema changes are made to the project, a new dated entry gets
+    appended to the BOTTOM of this file - never edit or delete a past entry.
+  - Run against the DB with: mysql -u <user> -p <database> < query_log.txt
+    (or copy/paste one dated section at a time)
+
+================================================================================
+2026-09-16 - Prescribe/bill workflow split + owner-only pricing
+================================================================================
+
+-- --------------------------------------------------------------------------
+-- 1. Medicine catalog: pack-size conversion (e.g. "1 strip = 10 tablets")
+--    and removal of the old catalog-level price (price now only exists at
+--    dispatch/batch level - see stock_batches).
+-- Safe to re-run: if a statement errors "Duplicate column name", that change
+-- is already applied (e.g. by ddl-auto=update against an empty table) - skip it.
+-- --------------------------------------------------------------------------
+ALTER TABLE medicines ADD COLUMN pack_size INT NULL;
+ALTER TABLE medicines ADD COLUMN pack_label VARCHAR(30) NULL;
+-- Old catalog-level price column, no longer used - uncomment once you've
+-- confirmed nothing else reads it. ddl-auto=update never drops columns on
+-- its own, so this is still sitting in the table unused until dropped by hand.
+-- ALTER TABLE medicines DROP COLUMN mrp;
+
+-- --------------------------------------------------------------------------
+-- 2. Stock batches: audit field recording how many whole packs (e.g. strips)
+--    a dispatch was entered as. Quantities themselves stay in base units
+--    (e.g. tablets) regardless.
+-- Safe to re-run (same "Duplicate column name" note as above).
+-- --------------------------------------------------------------------------
+ALTER TABLE stock_batches ADD COLUMN packs_received INT NULL;
+
+-- --------------------------------------------------------------------------
+-- 3. Prescriptions: splits prescribing (doctor) from billing (clinic admin)
+--    into two steps via a status column + billing audit fields, and adds a
+--    new prescribed_items table for what the doctor wrote (no price).
+--    prescription_items (existing table) continues to represent what was
+--    actually BILLED, now created only at billing time.
+-- Safe to re-run (same "Duplicate column name" / "table already exists" note).
+-- --------------------------------------------------------------------------
+ALTER TABLE prescriptions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PRESCRIBED';
+ALTER TABLE prescriptions ADD COLUMN billed_by_admin_id BIGINT NULL;
+ALTER TABLE prescriptions ADD COLUMN billed_at DATETIME NULL;
+
+-- Any prescription that already has billed items under the OLD (single-step)
+-- flow should be marked BILLED, not left at the DEFAULT 'PRESCRIBED' above.
+UPDATE prescriptions p
+SET p.status = 'BILLED'
+WHERE EXISTS (SELECT 1 FROM prescription_items pi WHERE pi.prescription_id = p.id);
+
+CREATE TABLE IF NOT EXISTS prescribed_items (
+    id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id       BIGINT NOT NULL,
+    medicine_id           BIGINT NOT NULL,
+    prescribed_quantity   INT NOT NULL,
+    dosage_instructions   VARCHAR(100) NULL,
+    CONSTRAINT fk_prescribed_items_prescription FOREIGN KEY (prescription_id) REFERENCES prescriptions (id),
+    CONSTRAINT fk_prescribed_items_medicine FOREIGN KEY (medicine_id) REFERENCES medicines (id)
+);
+
+-- Backfill: prescriptions billed under the OLD single-step flow have no
+-- prescribed_items row (that table is new). Create one per existing
+-- prescription_items row so the doctor's "what was prescribed" view isn't
+-- empty for historical data - assumes prescribed quantity == billed quantity
+-- for old records, which was true under the old flow.
+INSERT INTO prescribed_items (prescription_id, medicine_id, prescribed_quantity, dosage_instructions)
+SELECT pi.prescription_id, pi.medicine_id, pi.quantity, pi.dosage_instructions
+FROM prescription_items pi
+WHERE NOT EXISTS (
+    SELECT 1 FROM prescribed_items pd
+    WHERE pd.prescription_id = pi.prescription_id AND pd.medicine_id = pi.medicine_id
+);
+
+-- --------------------------------------------------------------------------
+-- 4. FIX for the owner-dashboard crash:
+--    "Unknown column 'pi1_0.created_at' in 'field list'"
+--
+--    prescription_items.created_at tracks when a line was actually BILLED,
+--    separate from prescriptions.created_at (when the doctor wrote it) - the
+--    dashboard's date-range filter needs the billing date. Hibernate tried to
+--    add this as NOT NULL directly and MySQL rejected it (no value to
+--    backfill existing rows with), so it must be done by hand in 3 stages.
+-- Safe to re-run in full - each step only acts on rows that still need it.
+-- --------------------------------------------------------------------------
+ALTER TABLE prescription_items ADD COLUMN created_at DATETIME NULL;
+
+UPDATE prescription_items pi
+JOIN prescriptions p ON pi.prescription_id = p.id
+SET pi.created_at = COALESCE(p.billed_at, p.created_at)
+WHERE pi.created_at IS NULL;
+
+ALTER TABLE prescription_items MODIFY COLUMN created_at DATETIME NOT NULL;
+
+================================================================================
+(new dated entries get appended below this line)
+================================================================================
